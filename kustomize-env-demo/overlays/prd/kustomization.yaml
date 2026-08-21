@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app-banner-prd
+resources:
+  - ../../base
+patches:
+  - target:
+      kind: Deployment
+      name: app-banner
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: PRODUCTION
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: "#43a047"

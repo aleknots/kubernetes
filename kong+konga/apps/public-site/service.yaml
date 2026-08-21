@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-site-service
+  namespace: lab-app
+  labels:
+    app: public-site
+spec:
+  type: ClusterIP
+  selector:
+    app: public-site
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP

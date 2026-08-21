@@ -1,0 +1,41 @@
+# Optional alternative to App-of-Apps: generate the 3 Applications from a list.
+# Use EITHER root-app.yaml + applications/*.yaml OR this ApplicationSet (not both,
+# or you will fight over the same Application names).
+#
+# Bootstrap:
+#   kubectl apply -f kustomize-env-demo/argocd/applicationset.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: app-banner
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: dev
+            label: DEVELOPMENT
+          - env: stg
+            label: STAGING
+          - env: prd
+            label: PRODUCTION
+  template:
+    metadata:
+      name: 'app-banner-{{.env}}'
+    spec:
+      project: lab
+      source:
+        repoURL: https://github.com/aleknots/Kubernetes.git
+        targetRevision: main
+        path: 'kustomize-env-demo/overlays/{{.env}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'app-banner-{{.env}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,15 @@
+# kubernetes/backstage/backstage/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backstage
+  namespace: backstage
+spec:
+  type: NodePort # Define que o servico sera exposto em uma porta do host
+  selector:
+    app: backstage
+  ports:
+    - name: http
+      port: 8081      # Porta interna do servico
+      targetPort: 7007 # Porta do container (Backstage)
+      nodePort: 30081  # Porta fixa que ficara aberta no seu localhost

@@ -1,0 +1,38 @@
+# kubernetes/backstage/postgres/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: backstage
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # Evita que dois pods tentem segurar o mesmo volume ao mesmo tempo
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13.2-alpine
+          imagePullPolicy: 'IfNotPresent'
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata # Subfolder adjustment to avoid permission error
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgresdb
+              # subPath removed to simplify and avoid mount errors on some storage providers
+      volumes:
+        - name: postgresdb
+          persistentVolumeClaim:
+            claimName: postgres-storage-claim

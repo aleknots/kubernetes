@@ -1,0 +1,26 @@
+# Parent Application (App-of-Apps).
+# Syncs every Application YAML under applications/ into the argocd namespace.
+# If you delete app-banner-dev in the UI, selfHeal recreates it from Git.
+#
+# Bootstrap once:
+#   kubectl apply -f kustomize-env-demo/argocd/root-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-banner-root
+  namespace: argocd
+spec:
+  project: lab
+  source:
+    repoURL: https://github.com/aleknots/Kubernetes.git
+    targetRevision: main
+    path: kustomize-env-demo/argocd/applications
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

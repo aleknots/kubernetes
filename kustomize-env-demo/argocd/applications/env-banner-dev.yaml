@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-banner-dev
+  namespace: argocd
+spec:
+  project: lab
+  source:
+    repoURL: https://github.com/aleknots/Kubernetes.git
+    targetRevision: main
+    path: kustomize-env-demo/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app-banner-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

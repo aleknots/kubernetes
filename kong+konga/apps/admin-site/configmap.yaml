@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: admin-site-html
+  namespace: lab-app
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Kong Lab - Admin</title>
+      <style>
+        :root {
+          --bg: #0a0f1a;
+          --card: #121a2b;
+          --border: #2a3650;
+          --text: #f1f5f9;
+          --muted: #94a3b8;
+          --accent: #38bdf8;
+          --lock: #f87171;
+        }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          min-height: 100vh;
+          font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+          background: radial-gradient(ellipse at top, #1a2744 0%, var(--bg) 55%);
+          color: var(--text);
+          padding: 2rem 1rem;
+        }
+        .wrap { max-width: 720px; margin: 0 auto; }
+        .badge {
+          display: inline-block;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--accent);
+          background: #0c4a6e;
+          padding: 0.35rem 0.65rem;
+          border-radius: 999px;
+          margin-bottom: 1rem;
+        }
+        h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+        .lead { color: var(--muted); margin: 0 0 1.5rem; line-height: 1.5; }
+        .card {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 1.25rem 1.5rem;
+          margin-bottom: 1rem;
+        }
+        .card h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 0.75rem; }
+        .status {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1rem;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lock); }
+        .dot.ok { background: #4ade80; }
+        .cred {
+          font-family: ui-monospace, monospace;
+          background: #0f172a;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          margin-top: 0.5rem;
+        }
+        .meta { font-size: 0.85rem; color: var(--muted); }
+        .meta code { background: #1e293b; padding: 0.15rem 0.4rem; border-radius: 4px; color: #7dd3fc; }
+        .cmd {
+          display: block;
+          margin-top: 0.5rem;
+          padding: 0.65rem;
+          background: #0f172a;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          color: #cbd5e1;
+          word-break: break-all;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <span class="badge">lab-app · basic auth</span>
+        <h1>Site com autenticação</h1>
+        <p class="lead">
+          Rota <code>/admin</code> no Kong exige o plugin <strong>basic-auth</strong>.
+          Sem credenciais o gateway responde <strong>401</strong>.
+        </p>
+
+        <div class="card">
+          <h2>Acesso</h2>
+          <div class="status">
+            <span class="dot ok" id="dot"></span>
+            <span id="status">Você passou pelo Kong com autenticação.</span>
+          </div>
+          <p class="meta" style="margin-top:0.75rem">Credencial do lab:</p>
+          <div class="cred">admin / admin123</div>
+          <code class="cmd">curl -u admin:admin123 http://localhost:8000/admin</code>
+        </div>
+
+        <div class="card">
+          <h2>Rota</h2>
+          <p class="meta">Path: <code id="path">/admin</code> · Consumer Kong: <code>admin-user</code></p>
+        </div>
+
+        <p class="meta">Pod: admin-site · Namespace: <code>lab-app</code></p>
+      </div>
+      <script>
+        document.getElementById("path").textContent = window.location.pathname || "/admin";
+      </script>
+    </body>
+    </html>

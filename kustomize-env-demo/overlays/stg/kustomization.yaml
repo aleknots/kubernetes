@@ -1,0 +1,18 @@
+# STG Overlay: inherits from base and overrides environment-specific values.
+# Modifying this file does not affect DEV or PRD.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app-banner-stg # applies this namespace to all resources inherited from base
+resources:
+  - ../../base # Common Deployment + Service
+patches: # JSON Patches on top of base (RFC 6902)
+  - target: # target resource from base
+      kind: Deployment
+      name: app-banner # metadata.name of Deployment in base/deployment.yaml
+    patch: |- # YAML block = JSON Patch operations list
+      - op: replace         # replaces existing value at target path
+        path: /spec/template/spec/containers/0/env/0/value
+        value: STAGING      # env[0] = ENV_NAME → banner text
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: "#fdd835"    # env[1] = BG_COLOR → background color

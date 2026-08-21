@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: admin-site-ingress
+  namespace: lab-app
+  annotations:
+    konghq.com/strip-path: "true"
+    konghq.com/plugins: admin-basic-auth
+spec:
+  ingressClassName: kong
+  rules:
+    - http:
+        paths:
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-site-service
+                port:
+                  number: 80

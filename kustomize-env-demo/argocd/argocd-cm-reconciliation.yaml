@@ -1,0 +1,12 @@
+# Patch applied after the official Argo CD install (kind-up.sh).
+# Default reconciliation is 180s; this sets Git/cluster poll to 1 minute.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  timeout.reconciliation: "60s"

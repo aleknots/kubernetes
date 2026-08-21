@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${ENV_NAME}</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: ${BG_COLOR};
+      font-family: system-ui, sans-serif;
+    }
+    main {
+      min-height: 100%;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 0.35em;
+      color: #111;
+      text-align: center;
+    }
+    .env {
+      font-size: clamp(2rem, 8vw, 5rem);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .version {
+      font-size: clamp(1rem, 3vw, 1.75rem);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="env">${ENV_NAME}</div>
+    <div class="version">${APP_VERSION}</div>
+  </main>
+</body>
+</html>

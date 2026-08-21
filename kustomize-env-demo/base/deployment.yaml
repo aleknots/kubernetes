@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-banner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-banner
+  template:
+    metadata:
+      labels:
+        app: app-banner
+    spec:
+      containers:
+        - name: app-banner
+          image: aleknots/app-banner:v1
+          # Always pull from Docker Hub (do not reuse a kind-loaded local copy).
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: ENV_NAME
+              value: PLACEHOLDER
+            - name: BG_COLOR
+              value: "#000000"
+            # APP_VERSION comes from the image (Docker ARG/ENV at build time).
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5

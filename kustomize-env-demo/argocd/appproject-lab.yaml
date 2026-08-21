@@ -1,0 +1,18 @@
+# AppProject "lab" - required before any Application can use spec.project: lab.
+# Argo only ships with project "default". Changing the name in Application YAML
+# is not enough; this CR must exist in namespace argocd.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: lab
+  namespace: argocd
+spec:
+  description: app-banner demo (kind)
+  sourceRepos:
+    - '*'
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace

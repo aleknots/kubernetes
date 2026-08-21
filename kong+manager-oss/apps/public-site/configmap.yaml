@@ -1,0 +1,126 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: public-site-html
+  namespace: lab-app
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Kong Lab - Site público</title>
+      <style>
+        :root {
+          --bg: #0b1220;
+          --card: #151d2e;
+          --border: #243049;
+          --text: #e8eef8;
+          --muted: #94a3b8;
+          --accent: #34d399;
+          --accent-dim: #065f46;
+        }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          min-height: 100vh;
+          font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+          background: radial-gradient(ellipse at top, #132238 0%, var(--bg) 55%);
+          color: var(--text);
+          padding: 2rem 1rem;
+        }
+        .wrap { max-width: 720px; margin: 0 auto; }
+        .badge {
+          display: inline-block;
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--accent);
+          background: var(--accent-dim);
+          padding: 0.35rem 0.65rem;
+          border-radius: 999px;
+          margin-bottom: 1rem;
+        }
+        h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+        .lead { color: var(--muted); margin: 0 0 1.5rem; line-height: 1.5; }
+        .card {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 1.25rem 1.5rem;
+          margin-bottom: 1rem;
+        }
+        .card h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 0.75rem; }
+        .path {
+          font-family: ui-monospace, monospace;
+          font-size: 1.1rem;
+          color: var(--accent);
+          word-break: break-all;
+        }
+        .routes { display: grid; gap: 0.5rem; }
+        .routes a {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.65rem 0.85rem;
+          background: #0f1729;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          color: var(--text);
+          text-decoration: none;
+          font-size: 0.95rem;
+        }
+        .routes a:hover { border-color: var(--accent); }
+        .routes a span { color: var(--muted); font-size: 0.8rem; }
+        .meta { font-size: 0.85rem; color: var(--muted); }
+        .meta code { background: #1e293b; padding: 0.15rem 0.4rem; border-radius: 4px; color: #7dd3fc; }
+        .pill {
+          display: inline-block;
+          margin-top: 0.75rem;
+          padding: 0.35rem 0.6rem;
+          background: #422006;
+          color: #fcd34d;
+          border-radius: 6px;
+          font-size: 0.8rem;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <span class="badge">lab-app · rate limit</span>
+        <h1>Site público</h1>
+        <p class="lead">
+          Tráfego entra pelo Kong em <code>localhost:8000</code>, passa pelo plugin
+          <strong>rate-limiting</strong> (20 req/min) e chega neste nginx.
+        </p>
+
+        <div class="card">
+          <h2>Rota atual</h2>
+          <div class="path" id="path">-</div>
+          <p class="meta">Prefixo Kong: <code>/site</code>, <code>/portal</code>, <code>/home</code>, <code>/app</code> (strip-path ativo)</p>
+          <span class="pill">Teste: <code>for i in {1..25}; do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/site; done</code></span>
+        </div>
+
+        <div class="card">
+          <h2>Outras rotas desta aplicação</h2>
+          <nav class="routes" id="routes"></nav>
+        </div>
+
+        <p class="meta">Pod: public-site · Namespace: <code>lab-app</code></p>
+      </div>
+      <script>
+        const paths = ["/site", "/portal", "/home", "/app"];
+        const base = "http://localhost:8000";
+        document.getElementById("path").textContent = window.location.pathname || "/";
+        const nav = document.getElementById("routes");
+        paths.forEach((p) => {
+          const a = document.createElement("a");
+          a.href = base + p;
+          a.innerHTML = p + '<span>abrir via Kong →</span>';
+          nav.appendChild(a);
+        });
+      </script>
+    </body>
+    </html>

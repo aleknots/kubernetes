@@ -1,0 +1,117 @@
+# Objetivo:
+# - workloads rodam nos workers
+# - control-plane não recebe aplicação
+# - Kong com 2 réplicas
+# - scheduler distribui os pods entre os workers
+# - no toleration for control-plane
+# - sem nodeSelector fixo em hostname
+
+image:
+  repository: kong
+  tag: "3.4.2"
+  pullPolicy: IfNotPresent
+
+ingressController:
+  enabled: true
+  ingressClassName: kong
+  installCRDs: false
+  image:
+    repository: kong/kubernetes-ingress-controller
+    tag: "3.2.1"
+
+proxy:
+  type: ClusterIP
+  http:
+    enabled: true
+    containerPort: 8000
+    servicePort: 80
+  https:
+    enabled: false
+  annotations: {}
+
+admin:
+  enabled: true
+  type: ClusterIP
+  http:
+    enabled: true
+    servicePort: 8001
+    containerPort: 8001
+  tls:
+    enabled: false
+
+postgresql:
+  enabled: false
+
+replicaCount: 2
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+livenessProbe:
+  httpGet:
+    path: /status
+    port: status
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /status
+    port: status
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+tolerations: []
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - kong
+          topologyKey: kubernetes.io/hostname
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: kong
+
+plugins: {}
+
+env:
+  database: postgres
+  pg_host: postgres.lab-kong.svc.cluster.local
+  pg_port: "5432"
+  pg_user: kong
+  pg_password: kong
+  pg_database: kong
+  role: traditional
+  log_level: warn
+  proxy_access_log: "/dev/stdout"
+  proxy_error_log: "/dev/stderr"

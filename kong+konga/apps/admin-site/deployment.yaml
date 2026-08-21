@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-site
+  namespace: lab-app
+  labels:
+    app: admin-site
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-site
+  template:
+    metadata:
+      labels:
+        app: admin-site
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: html
+          configMap:
+            name: admin-site-html

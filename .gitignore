@@ -1,0 +1,25 @@
+# kind / kubectl
+.kind-kubeconfig
+kubeconfig
+*.kubeconfig
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.iml
+
+# Cursor / local agent scratch
+.superpowers/
+/docs/
+
+# Docker / build leftovers
+*.tar
+*.img
+.env
+.env.*
+!.env.example
