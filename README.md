@@ -12,7 +12,8 @@ Hands-on Kubernetes labs, GitOps workflows with Kustomize and Argo CD, API Gatew
 
 | Folder | Description |
 |---|---|
-| [kustomize-env-demo/](kustomize-env-demo/) | Multi-environment HTML App (DEV blue, STG yellow, PRD green) with **Kustomize** `base` + overlays, container image on **GHCR**, and **Argo CD** on kind. Environment isolation: modifying `overlays/dev` does not affect STG/PRD. |
+| [sre-portfolio/](sre-portfolio/) | 🚀 **Main Portal (`aleon.cloud`)**: Ultra-modern glassmorphic SRE & Cloud Engineering Hub built with HTML5/CSS3 and deployed on Kubernetes with Nginx. |
+| [kustomize-env-demo/](kustomize-env-demo/) | Multi-environment HTML App (DEV blue, STG yellow, PRD green) with **Kustomize** `base` + overlays, container image on **GHCR/Docker Hub**, and **Argo CD** on kind. Environment isolation: modifying `overlays/dev` does not affect STG/PRD. |
 | [kong+konga/](kong+konga/) | Legacy Kong Gateway 3.4 + Kong Ingress Controller + PostgreSQL + **Konga** (UI) and two Nginx sites (public and admin with Basic Auth). |
 | [kong+manager-oss/](kong+manager-oss/) | Kong Gateway **Community 3.8** + KIC + **Kong Manager OSS** (native UI) and demo site. No Enterprise images. |
 | [backstage/](backstage/) | Backstage Developer Portal + PostgreSQL in `backstage` namespace (ConfigMap, Secrets, local PV, NodePort Service). |
