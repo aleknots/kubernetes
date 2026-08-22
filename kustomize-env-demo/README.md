@@ -200,22 +200,25 @@ Kustomize allows modifying configurations for a single environment without impac
 
 ---
 
-## 💡 Building & Updating Image Tag (Optional - v2)
+## 💡 Building Multi-Arch Images (`docker buildx`)
 
-To test upgrading image versions in the lab (building and pushing tag `v2` to Docker Hub):
+To build images compatible with **both x86_64/amd64 and ARM64 clusters** (e.g. OCI Ampere nodes + local kind/Docker Desktop):
 
-1. **Build & Push New Image (`v2`)**:
-   Flag `--build-arg APP_VERSION=v2` embeds the **V2** label directly into the HTML page:
+1. **Build & Push Multi-Arch Image (e.g. `v1` or `v2`)**:
+   Flag `--build-arg APP_VERSION=v1` embeds the version label directly into the HTML page:
 
    ```bash
    cd /path/to/kubernetes
 
-   # 1) Build image with v2 tag (replace 'your-user' with Docker Hub account)
-   docker build --build-arg APP_VERSION=v2 -t your-user/app-banner:v2 kustomize-env-demo/app
+   # 1) Enable multi-arch builder
+   docker buildx create --use --name multi-builder || docker buildx use multi-builder
 
-   # 2) Login & Push to Docker Hub
-   docker login -u your-user
-   docker push your-user/app-banner:v2
+   # 2) Build and push multi-architecture image (x86_64 + ARM64)
+   docker buildx build \
+     --platform linux/amd64,linux/arm64 \
+     --build-arg APP_VERSION=v1 \
+     -t your-user/app-banner:v1 \
+     --push kustomize-env-demo/app
    ```
 
 2. **Update Image in Kustomize**:
