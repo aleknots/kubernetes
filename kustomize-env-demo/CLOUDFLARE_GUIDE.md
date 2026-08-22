@@ -43,10 +43,11 @@ Running `cloudflared` as a native **Kubernetes Deployment Pod** inside the clust
      --dry-run=client -o yaml | kubectl apply -f -
    ```
 
-2. **Deploy the `cloudflared` Pod**:
+2. **Deploy the `cloudflared` Pod** *(if not already applied)*:
    ```bash
    kubectl apply -f kustomize-env-demo/cloudflare/cloudflared.yaml
    ```
+   *> 💡 **Note**: If `cloudflared.yaml` was already applied previously, Kubernetes detects the newly created Secret in Step 1 and automatically starts the Pod instantly without needing to re-apply.*
 
 3. **Verify Pod Status**:
    ```bash
