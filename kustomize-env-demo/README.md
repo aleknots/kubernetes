@@ -205,21 +205,56 @@ Kustomize allows modifying configurations for a single environment without impac
 To build images compatible with **both x86_64/amd64 and ARM64 clusters** (e.g. OCI Ampere nodes + local kind/Docker Desktop):
 
 1. **Build & Push Multi-Arch Image (e.g. `v1` or `v2`)**:
-   Flag `--build-arg APP_VERSION=v1` embeds the version label directly into the HTML page:
+   Navigate to the application directory `kustomize-env-demo/app` (or run from repo root passing `kustomize-env-demo/app` as context):
 
    ```bash
-   cd /path/to/kubernetes
-
-   # 1) Enable multi-arch builder
-   docker buildx create --use --name multi-builder || docker buildx use multi-builder
-
-   # 2) Build and push multi-architecture image (x86_64 + ARM64)
-   docker buildx build \
-     --platform linux/amd64,linux/arm64 \
-     --build-arg APP_VERSION=v1 \
-     -t your-user/app-banner:v1 \
-     --push kustomize-env-demo/app
+   cd kustomize-env-demo/app
    ```
+
+   - **Option 1: Use Existing Builder or Create if Missing**
+     Flag `--build-arg APP_VERSION=v1` embeds the version label directly into the HTML page:
+
+     ```bash
+     # 1) Enable multi-arch builder
+     docker buildx create --use --name multi-builder || docker buildx use multi-builder
+
+     # 2) Build and push multi-architecture image (x86_64 + ARM64)
+     docker buildx build \
+       --platform linux/amd64,linux/arm64 \
+       --build-arg APP_VERSION=v1 \
+       -t your-user/app-banner:v1 \
+       --push .
+     ```
+
+   - **Option 2: Recreate / Reset Builder (If `multi-builder` instance already exists or encounters errors)**
+     If you encounter `ERROR: existing instance for "multi-builder"` or want to reset the builder:
+
+     ```bash
+     # 1) Remove existing builder instance
+     docker buildx rm multi-builder
+
+     # 2) Recreate and bootstrap multi-arch builder
+     docker buildx create --name multi-builder --use --bootstrap
+
+     # 3) Build and push multi-architecture image
+     docker buildx build \
+       --platform linux/amd64,linux/arm64 \
+       --build-arg APP_VERSION=v1 \
+       -t your-user/app-banner:v1 \
+       --push .
+     ```
+
+   > 💡 **Tip (creating version `v2` in the future):**
+   > When testing application updates in Kustomize / Argo CD (e.g. `v2`), update the `--build-arg` and image tag `-t`:
+   > ```bash
+   > docker buildx build \
+   >   --platform linux/amd64,linux/arm64 \
+   >   --build-arg APP_VERSION=v2 \
+   >   -t your-user/app-banner:v2 \
+   >   --push .
+   > ```
+
+   > **Note:** To run `docker buildx build ...` with `.` as context, ensure you are inside `kustomize-env-demo/app`. If executing from repository root (`kubernetes/`), pass `kustomize-env-demo/app` as context path instead of `.`.
 
 2. **Update Image in Kustomize**:
    Edit target overlay (e.g. `kustomize-env-demo/overlays/dev/kustomization.yaml`) adding or modifying image replacement patch:
