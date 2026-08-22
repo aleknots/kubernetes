@@ -26,14 +26,36 @@ This guide explains how to expose your **DEV**, **STG**, **PRD**, and **Argo CD*
 2. On sidebar menu, navigate to **Zero Trust** > **Networks** > **Tunnels**.
 3. Click **Create a Tunnel** (select `Cloudflared` option).
 4. Name the tunnel (e.g. `kustomize-lab`) and click **Save tunnel**.
-5. On agent installation screen, select **Docker**.
-6. Copy the **Token** displayed in the command (long string following `--token`).
+5. Copy the **Token** displayed in the agent installation screen (long string following `--token`).
 
 ---
 
-### Step 2: Securely Configure Token (DevSecOps)
+### Step 2: Deploy Cloudflare Tunnel as a Native Kubernetes Pod (DevSecOps)
 
-To avoid exposing tokens in public repositories:
+Running `cloudflared` as a native **Kubernetes Deployment Pod** inside the cluster offers maximum resiliency:
+* **Zero Workstation Blocking**: No local SSH tunnels, port-forwarding, or background processes required on your working machine.
+* **Automatic High-Availability**: Kubernetes automatically manages and restarts the Pod if a node reboots.
+
+1. **Create Kubernetes Secret with your Tunnel Token**:
+   ```bash
+   kubectl create secret generic cloudflared-token -n kube-system \
+     --from-literal=token="YOUR_CLOUDFLARE_TUNNEL_TOKEN" \
+     --dry-run=client -o yaml | kubectl apply -f -
+   ```
+
+2. **Deploy the `cloudflared` Pod**:
+   ```bash
+   kubectl apply -f kustomize-env-demo/cloudflare/cloudflared.yaml
+   ```
+
+3. **Verify Pod Status**:
+   ```bash
+   kubectl get pods -n kube-system -l app=cloudflared
+   ```
+
+---
+
+### Step 3: Securely Store Token Locally (Optional `.env`)
 
 1. At the root of `kustomize-env-demo`, create a `.env` file:
    ```bash
@@ -45,7 +67,7 @@ To avoid exposing tokens in public repositories:
    CLOUDFLARE_TUNNEL_TOKEN=eyJh... (your complete token here)
    ```
 
-> 🔒 **Note**: The `.env` file and local guide are added to `.gitignore` to ensure secret tokens are not committed to Git.
+> 🔒 **Note**: The `.env` file is listed in `.gitignore` to ensure tokens are not committed to Git.
 
 ---
 
