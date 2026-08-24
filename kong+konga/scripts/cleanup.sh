@@ -1,6 +1,6 @@
 #!/bin/bash
-# cleanup.sh - Removes the lab Kind cluster
-# Usage: bash scripts/cleanup.sh [--yes]
+# cleanup.sh - Remove o cluster Kind do lab
+# Uso: bash scripts/cleanup.sh [--yes]
 
 CLUSTER_NAME="lab"
 FORCE=false
@@ -12,17 +12,17 @@ log_ok()   { echo -e "${GREEN}[✓]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[⚠]${NC} $1"; }
 
 if ! $FORCE; then
-  log_warn "This will delete the Kind cluster '$CLUSTER_NAME'."
-  read -r -p "Type 'yes' to confirm: " r
-  [[ "$r" == "yes" ]] || { log_info "Cancelled."; exit 0; }
+  log_warn "Isso excluirá o cluster Kind '$CLUSTER_NAME'."
+  read -r -p "Digite 'yes' para confirmar: " r
+  [[ "$r" == "yes" ]] || { log_info "Cancelado."; exit 0; }
 fi
 
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
   kind delete cluster --name "$CLUSTER_NAME"
-  log_ok "Cluster removed"
+  log_ok "Cluster removido"
 else
-  log_warn "Cluster '$CLUSTER_NAME' not found"
+  log_warn "Cluster '$CLUSTER_NAME' não encontrado"
 fi
 
-log_info "kubectl context: kind delete cluster removes kind-lab from ~/.kube/config"
-log_info "Check: kind get clusters"
+log_info "Contexto do kubectl: kind delete cluster remove kind-lab do ~/.kube/config"
+log_info "Verificar: kind get clusters"

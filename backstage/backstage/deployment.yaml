@@ -26,7 +26,7 @@ spec:
                 name: postgres-secrets
             - secretRef:
                 name: backstage-secrets
-# Uncomment if health checks are enabled in your app:
+# Descomente se os health checks estiverem habilitados na sua aplicação:
 # https://backstage.io/docs/plugins/observability#health-checks
 #          readinessProbe:
 #            httpGet:

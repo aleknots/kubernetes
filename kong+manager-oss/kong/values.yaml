@@ -1,6 +1,6 @@
-# Standard stack: Kong Gateway Community + Kong Manager OSS + Ingress Controller.
-# Image `kong:3.8.0` exposes `edition: community`; do not use `kong/kong-gateway` in this lab.
-# Admin UI: Kong Manager (port-forward via scripts/port-forward-manager.sh).
+# Stack padrão: Kong Gateway Community + Kong Manager OSS + Ingress Controller.
+# A imagem `kong:3.8.0` exibe `edition: community`; não utilize `kong/kong-gateway` neste lab.
+# UI de Administração: Kong Manager (port-forward via scripts/port-forward-manager.sh).
 image:
   repository: kong
   tag: "3.8.0"
@@ -9,7 +9,7 @@ image:
 ingressController:
   enabled: true
   ingressClassName: kong
-  # CRDs are installed via install-base.sh or manual README step.
+  # CRDs são instaladas via install-base.sh ou etapa manual no README.
   installCRDs: false
   image:
     repository: kong/kubernetes-ingress-controller

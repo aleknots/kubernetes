@@ -1,6 +1,6 @@
 #!/bin/bash
-# port-forward-konga.sh - Exposes Konga UI on localhost:1337
-# Usage: bash scripts/port-forward-konga.sh
+# port-forward-konga.sh - Expõe a interface do Konga em localhost:1337
+# Uso: bash scripts/port-forward-konga.sh
 
 BLUE='\033[0;34m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 NAMESPACE="lab-kong"

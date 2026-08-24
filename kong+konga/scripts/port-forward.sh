@@ -1,13 +1,13 @@
 #!/bin/bash
-# port-forward.sh - Script to simplify Kong port-forwarding
-# Usage: bash scripts/port-forward.sh
+# port-forward.sh - Script para simplificar o port-forwarding do Kong
+# Uso: bash scripts/port-forward.sh
 
-# Colors for output
+# Cores para saída
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m' # Sem Cor
 
 NAMESPACE="lab-kong"
 SERVICE="kong-kong-proxy"
@@ -32,31 +32,31 @@ log_error() {
 }
 
 main() {
-    log_info "Starting port-forward for Kong..."
+    log_info "Iniciando port-forward para o Kong..."
     echo ""
 
-    kubectl config use-context kind-lab 2>/dev/null || log_warning "Context kind-lab not found; using current context"
+    kubectl config use-context kind-lab 2>/dev/null || log_warning "Contexto kind-lab não encontrado; utilizando contexto atual"
 
-    # Verify if service exists
+    # Verifica se o serviço existe
     if ! kubectl get svc "$SERVICE" -n "$NAMESPACE" > /dev/null 2>&1; then
-        log_error "Service '$SERVICE' not found in namespace '$NAMESPACE'"
-        log_warning "Ensure Kong has been installed correctly"
+        log_error "Serviço '$SERVICE' não encontrado no namespace '$NAMESPACE'"
+        log_warning "Certifique-se de que o Kong foi instalado corretamente"
         exit 1
     fi
 
-    log_success "Service found: $NAMESPACE/$SERVICE"
+    log_success "Serviço encontrado: $NAMESPACE/$SERVICE"
     echo ""
 
-    log_warning "Port-forward started:"
+    log_warning "Port-forward iniciado:"
     echo "  Local: $ADDRESS:$LOCAL_PORT"
-    echo "  Remote: $SERVICE:$REMOTE_PORT (namespace: $NAMESPACE)"
+    echo "  Remoto: $SERVICE:$REMOTE_PORT (namespace: $NAMESPACE)"
     echo ""
-    echo "Kong will be available at: http://localhost:$LOCAL_PORT/site and http://localhost:$LOCAL_PORT/admin"
+    echo "O Kong estará disponível em: http://localhost:$LOCAL_PORT/site e http://localhost:$LOCAL_PORT/admin"
     echo ""
-    log_info "Press CTRL+C to stop port-forward"
+    log_info "Pressione CTRL+C para parar o port-forward"
     echo ""
 
-    # Execute port-forward
+    # Executa o port-forward
     kubectl port-forward \
         -n "$NAMESPACE" \
         "svc/$SERVICE" \
@@ -64,5 +64,5 @@ main() {
         --address "$ADDRESS"
 }
 
-# Run main
+# Executa o main
 main "$@"

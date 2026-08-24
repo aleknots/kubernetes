@@ -1,57 +1,57 @@
-# Kong Lab (Kind)
+# Lab Kong (Kind)
 
-Local lab with **Kind**, **PostgreSQL 11**, **Kong Gateway Community 3.8.0**, **Kong Ingress Controller 3.2**, **Kong Manager OSS** (default UI), and Nginx demo site.
+Lab local com **Kind**, **PostgreSQL 11**, **Kong Gateway Community 3.8.0**, **Kong Ingress Controller 3.2**, **Kong Manager OSS** (UI padrão) e site de demonstração em Nginx.
 
-Standard workflow uses OSS image `kong:3.8.0`. Inside Kong Manager, Gateway displays `Edition: community`; this lab does not use Enterprise images in free mode.
+O fluxo de trabalho padrão utiliza a imagem OSS `kong:3.8.0`. Dentro do Kong Manager, o Gateway exibe `Edition: community`; este lab não utiliza imagens Enterprise em modo gratuito.
 
-## Repository Structure
+## Estrutura do Repositório
 
 ```text
 .
 ├── cluster.yaml                 # Kind: 1 control-plane + 2 workers
 ├── namespaces.yaml              # lab-kong, lab-app
-├── postgres/                    # Kong PostgreSQL (core)
+├── postgres/                    # PostgreSQL do Kong (núcleo)
 ├── kong/
 │   ├── values.yaml              # Helm: Gateway Community + Manager OSS + KIC
 │   └── rate-limit.yaml
-├── manager-auth/                # Basic Auth proxy in front of Kong Manager + Admin API
-├── apps/                        # Demo public site (Ingress → Kong)
+├── manager-auth/                # Proxy Basic Auth em frente ao Kong Manager + Admin API
+├── apps/                        # Site público de demonstração (Ingress → Kong)
 └── scripts/
-    ├── install-base.sh          # Provisions base stack
-    ├── port-forward-site.sh     # Public site via Proxy :8000
-    ├── port-forward-manager.sh  # Authenticated Manager :8002
-    └── cleanup.sh               # Removes Kind cluster
+    ├── install-base.sh          # Provisiona a stack base
+    ├── port-forward-site.sh     # Site público via Proxy na porta :8000
+    ├── port-forward-manager.sh  # Manager autenticado na porta :8002
+    └── cleanup.sh               # Remove o cluster Kind
 ```
 
-## Architecture (Standard)
+## Arquitetura (Padrão)
 
 ```text
-Browser → localhost:8000
+Navegador → localhost:8000
     → Kong Proxy → Ingress → apps (lab-app)
 
-Browser → localhost:8002/manager/
-    → Nginx Basic Auth → Kong Manager OSS (Gateway edition: community)
+Navegador → localhost:8002/manager/
+    → Nginx Basic Auth → Kong Manager OSS (Edição do Gateway: community)
     → /admin-api → Kong Admin API
-    → PostgreSQL (kong database)
+    → PostgreSQL (banco de dados kong)
 ```
 
-## Credentials (Lab Only)
+## Credenciais (Apenas para o Lab)
 
-| Service | Username | Password |
+| Serviço | Usuário | Senha |
 |---------|---------|-------|
 | Postgres Kong | `kong` | `kong` |
 | Basic Auth Kong Manager | `admin` | `admin123` |
 
-## Prerequisites
+## Pré-requisitos
 
 - Docker, Kind, kubectl, Helm 3
 
-## Quick Installation (Standard Stack)
+## Instalação Rápida (Stack Padrão)
 
 ```bash
-cd ~/kubernetes/kong+manager-oss   # root of this project
+cd ~/kubernetes/kong+manager-oss   # raiz deste projeto
 
-# Images
+# Imagens
 docker pull postgres:11-alpine
 docker pull kong:3.8.0
 docker pull kong/kubernetes-ingress-controller:3.2.1
@@ -60,14 +60,14 @@ docker pull nginx:alpine
 bash scripts/install-base.sh
 ```
 
-## Port-forwarding
+## Redirecionamento de Portas (Port-forwarding)
 
-| Terminal | Command | URL |
+| Terminal | Comando | URL |
 |----------|---------|-----|
 | 1 | `bash scripts/port-forward-site.sh` | `http://localhost:8000/site` |
 | 2 | `bash scripts/port-forward-manager.sh` | `http://localhost:8002/manager/` |
 
-Verification:
+Verificação:
 
 ```bash
 curl -i http://localhost:8000/site
@@ -75,9 +75,9 @@ curl -i http://localhost:8002/manager/
 curl -i -u admin:admin123 http://localhost:8002/manager/
 ```
 
-## Manual Installation (Step by Step)
+## Instalação Manual (Passo a Passo)
 
-### 1. Kind Cluster
+### 1. Cluster Kind
 
 ```bash
 kind create cluster --config cluster.yaml
@@ -88,7 +88,7 @@ kubectl label node lab-worker node-role.kubernetes.io/worker=worker --overwrite
 kubectl label node lab-worker2 node-role.kubernetes.io/worker=worker --overwrite
 ```
 
-### 2. Namespaces and Postgres
+### 2. Namespaces e Postgres
 
 ```bash
 kubectl apply -f namespaces.yaml
@@ -100,7 +100,7 @@ kubectl exec -n lab-kong deploy/postgres -- pg_isready -U kong -d kong
 
 ### 3. Kong (Helm)
 
-The [values](kong/values.yaml) configures `image.repository: kong`, `image.tag: 3.8.0`, `enterprise.enabled: false`, and `manager.enabled: true`.
+O [values](kong/values.yaml) configura `image.repository: kong`, `image.tag: 3.8.0`, `enterprise.enabled: false` e `manager.enabled: true`.
 
 ```bash
 helm repo add kong https://charts.konghq.com
@@ -123,20 +123,20 @@ kubectl apply -f manager-auth/
 kubectl rollout status deployment/kong-manager-auth -n lab-kong --timeout=120s
 ```
 
-### 4. Plugins and Apps
+### 4. Plugins e Apps
 
 ```bash
 kubectl apply -f kong/rate-limit.yaml
 kubectl apply -f apps/public-site/
 ```
 
-## Administrative UI
+## Interface de Administração
 
-| UI | Status | Local URL | Dedicated Database |
+| UI | Status | URL Local | Banco de Dados Dedicado |
 |----|--------|-----------|---------------|
-| **Kong Manager OSS** | default, Gateway `community`, Basic Auth | `http://localhost:8002/manager/` | No (uses Admin API → `kong`) |
+| **Kong Manager OSS** | padrão, Gateway `community`, Basic Auth | `http://localhost:8002/manager/` | Não (utiliza Admin API → `kong`) |
 
-## Verification
+## Verificação
 
 ```bash
 kubectl get nodes
@@ -145,7 +145,7 @@ kubectl get pods,ingress -n lab-app
 kubectl get kongplugin,kongconsumer -n lab-app
 ```
 
-Expected status:
+Status esperado:
 
 ```text
 lab-control-plane   Ready
@@ -163,31 +163,31 @@ public-site-xxxxx               1/1   Running
 
 ## PostgreSQL
 
-Lab PostgreSQL runs in namespace `lab-kong`, uses Service `postgres:5432`, image `postgres:11-alpine`, and contains only `kong` database.
+O PostgreSQL do lab roda no namespace `lab-kong`, utiliza o Serviço `postgres:5432`, imagem `postgres:11-alpine` e contém apenas o banco de dados `kong`.
 
-| Database | Owner / Usage |
+| Banco de Dados | Proprietário / Uso |
 |---|---|
-| `kong` | Kong Gateway data: routes, services, plugins, consumers |
+| `kong` | Dados do Kong Gateway: rotas, serviços, plugins, consumidores |
 
-### Connecting to Postgres
+### Conectando ao Postgres
 
 ```bash
 kubectl config use-context kind-lab
 
-# Interactive shell in Postgres pod
+# Shell interativo no pod do Postgres
 kubectl exec -it -n lab-kong deploy/postgres -- sh
 
-# Inside pod
+# Dentro do pod
 psql -U kong -d kong
 ```
 
-One-line shortcut:
+Atalho de linha única:
 
 ```bash
 kubectl exec -it -n lab-kong deploy/postgres -- psql -U kong -d kong
 ```
 
-### Inspecting `kong` Database
+### Inspecionando o Banco de Dados `kong`
 
 ```sql
 SELECT id, name, host, path, protocol, "created_at"
@@ -203,7 +203,7 @@ SELECT id, username, custom_id, "created_at"
 FROM consumers;
 ```
 
-### One-liners with `kubectl exec`
+### Linhas Únicas com `kubectl exec`
 
 ```bash
 kubectl exec -n lab-kong deploy/postgres -- \
@@ -216,9 +216,9 @@ kubectl exec -n lab-kong deploy/postgres -- \
   psql -U kong -d kong -c "\dt"
 ```
 
-## Teardown
+## Limpeza
 
 ```bash
-bash scripts/cleanup.sh        # prompts for confirmation
+bash scripts/cleanup.sh        # solicita confirmação
 bash scripts/cleanup.sh --yes
 ```

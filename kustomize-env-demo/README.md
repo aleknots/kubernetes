@@ -1,22 +1,22 @@
-# Kustomize Environment Demo
+# Demonstração de Ambientes com Kustomize
 
-A demonstration web application (colored background + environment badge) deployed using **Kustomize (base + overlays)** and **GitOps with Argo CD** on a local **kind** cluster.
+Uma aplicação web de demonstração (fundo colorido + badge de ambiente) implantada utilizando **Kustomize (base + overlays)** e **GitOps com Argo CD** em um cluster local do **kind**.
 
 ---
 
-## 📋 Environment Matrix
+## 📋 Matriz de Ambientes
 
-| Overlay | Namespace | Banner Text | Background Color | Docker Image |
+| Overlay | Namespace | Texto do Banner | Cor de Fundo | Imagem Docker |
 | --- | --- | --- | --- | --- |
-| `dev` | `app-banner-dev` | `DEVELOPMENT` | `#1e88e5` (Blue) | `aleknots/app-banner:v1` |
-| `stg` | `app-banner-stg` | `STAGING` | `#fdd835` (Yellow) | `aleknots/app-banner:v1` |
-| `prd` | `app-banner-prd` | `PRODUCTION` | `#43a047` (Green) | `aleknots/app-banner:v1` |
+| `dev` | `app-banner-dev` | `DEVELOPMENT` | `#1e88e5` (Azul) | `aleknots/app-banner:v1` |
+| `stg` | `app-banner-stg` | `STAGING` | `#fdd835` (Amarelo) | `aleknots/app-banner:v1` |
+| `prd` | `app-banner-prd` | `PRODUCTION` | `#43a047` (Verde) | `aleknots/app-banner:v1` |
 
 ---
 
-## 📥 Quick Download (Single Folder Clone)
+## 📥 Download Rápido (Clone de Pasta Única)
 
-If you want to clone **only this subfolder** directly without downloading the entire repository, use **`npx giget`** (modern successor to `degit`):
+Se deseja clonar **apenas esta subpasta** diretamente sem baixar o repositório inteiro, utilize **`npx giget`** (sucessor moderno do `degit`):
 
 ```bash
 npx -y giget gh:aleknots/kubernetes/kustomize-env-demo kustomize-env-demo
@@ -25,25 +25,25 @@ cd kustomize-env-demo
 
 ---
 
-## 🛠️ Prerequisites
+## 🛠️ Pré-requisitos
 
-To run this lab on your local machine, you only need the following tools installed:
+Para executar este lab na sua máquina local, você precisa ter instaladas as seguintes ferramentas:
 
-- **Docker** (daemon running)
+- **Docker** (daemon rodando)
 - **`kind`** (Kubernetes in Docker)
-- **`kubectl`** (Kubernetes CLI). *(Note: `kubectl` natively supports Kustomize via `kubectl apply -k` and `kubectl kustomize`; installing Kustomize separately is not required).*
+- **`kubectl`** (CLI do Kubernetes). *(Nota: O `kubectl` suporta nativamente o Kustomize via `kubectl apply -k` e `kubectl kustomize`; não é necessário instalar o Kustomize separadamente).*
 
 ---
 
-## 🚀 How to Run the Lab
+## 🚀 Como Executar o Lab
 
-Choose one of the two options below to provision the environment:
+Escolha uma das duas opções abaixo para provisionar o ambiente:
 
-### Option 1: Step-by-step Manual Guide (Didactic / Educational)
+### Opção 1: Guia Manual Passo a Passo (Didático / Educacional)
 
-Execute the commands from the root of the repository (`kubernetes/`):
+Execute os comandos a partir da raiz do repositório (`kubernetes/`):
 
-#### Step 1 - Create the `kind` Cluster
+#### Passo 1 - Criar o Cluster `kind`
 ```bash
 kind create cluster --name kustomize-demo
 kind export kubeconfig --name kustomize-demo
@@ -51,148 +51,148 @@ kubectl config use-context kind-kustomize-demo
 kubectl get nodes
 ```
 
-#### Step 2 - Install Argo CD
+#### Passo 2 - Instalar o Argo CD
 ```bash
 kubectl create namespace argocd
 kubectl apply --server-side --force-conflicts -n argocd \
   -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 
-#### Step 3 - Create `lab` AppProject in Argo CD
+#### Passo 3 - Criar AppProject `lab` no Argo CD
 ```bash
 kubectl apply -f kustomize-env-demo/argocd/appproject-lab.yaml
 ```
 
-#### Step 4 - Adjust Git Reconciliation Interval (Optional - 60s)
+#### Passo 4 - Ajustar Intervalo de Reconciliação do Git (Opcional - 60s)
 ```bash
 kubectl -n argocd patch cm argocd-cm --type merge \
   -p '{"data":{"timeout.reconciliation":"60s"}}'
 kubectl -n argocd rollout restart statefulset/argocd-application-controller
 ```
 
-#### Step 5 - Wait for Argo CD to be Ready
+#### Passo 5 - Aguardar o Argo CD Ficar Pronto
 ```bash
 kubectl -n argocd rollout status deploy/argocd-server --timeout=300s
 kubectl -n argocd rollout status statefulset/argocd-application-controller --timeout=300s
 ```
 
-#### Step 6 - Retrieve Initial Argo CD Admin Password
+#### Passo 6 - Obter Senha Inicial de Admin do Argo CD
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d; echo
 ```
 
-#### Step 7 - Apply Applications
+#### Passo 7 - Aplicar Aplicações
 
-You can register the applications using three different approaches:
+Você pode registrar as aplicações utilizando três abordagens diferentes:
 
-##### Method A - Direct Kustomize via terminal:
+##### Método A - Kustomize direto via terminal:
 ```bash
-# Apply DEV, STG, and PRD overlays to Kubernetes
+# Aplica overlays DEV, STG e PRD no Kubernetes
 kubectl apply -k kustomize-env-demo/overlays/dev
 kubectl apply -k kustomize-env-demo/overlays/stg
 kubectl apply -k kustomize-env-demo/overlays/prd
 ```
 
-##### Method B - CLI via App-of-Apps:
+##### Método B - CLI via App-of-Apps:
 ```bash
 kubectl apply -f kustomize-env-demo/argocd/app-root.yaml
 ```
 
-##### Method C - Web Console UI (Argo CD Dashboard):
-If you prefer creating the root application visually via browser (access `https://localhost:8088` after port-forwarding):
+##### Método C - UI do Console Web (Dashboard do Argo CD):
+Se preferir criar a aplicação raiz visualmente via navegador (acesse `https://localhost:8088` após o port-forward):
 
-1. Click **`+ NEW APP`** button on top left.
-2. Fill out form fields:
+1. Clique no botão **`+ NEW APP`** no canto superior esquerdo.
+2. Preencha os campos do formulário:
    - **GENERAL**:
      - **Application Name**: `app-banner-root`
      - **Project Name**: `lab`
-     - **Sync Policy**: `Automatic` *(enable `PRUNE RESOURCES` and `SELF HEAL`)*
+     - **Sync Policy**: `Automatic` *(habilite `PRUNE RESOURCES` e `SELF HEAL`)*
    - **SOURCE**:
      - **Repository URL**: `https://github.com/aleknots/Kubernetes.git`
-     - **Revision**: `HEAD` (or `main`)
+     - **Revision**: `HEAD` (ou `main`)
      - **Path**: `kustomize-env-demo/argocd/applications`
    - **DESTINATION**:
-     - **Cluster URL**: `https://kubernetes.default.svc` *(or `in-cluster`)*
+     - **Cluster URL**: `https://kubernetes.default.svc` *(ou `in-cluster`)*
      - **Namespace**: `argocd`
    - **DIRECTORY**:
-     - **Directory Recurse**: Check `DIRECTORY RECURSE` (true)
-3. Click **`CREATE`** on top of screen. Argo CD will create parent application `app-banner-root`, which instantiates all 3 environment cards (`dev`, `stg`, `prd`) automatically.
+     - **Directory Recurse**: Marque `DIRECTORY RECURSE` (true)
+3. Clique em **`CREATE`** no topo da tela. O Argo CD criará a aplicação pai `app-banner-root`, que instanciará todos os 3 cards de ambiente (`dev`, `stg`, `prd`) automaticamente.
 
-#### 🌳 Why do we use the Root Application (`app-banner-root`)?
+#### 🌳 Por que usamos a Aplicação Raiz (`app-banner-root`)?
 
-`app-banner-root` implements the **App-of-Apps** pattern in Argo CD. Instead of manually managing each environment individually, a single "parent" Application syncs manifests from `argocd/applications/`:
+A `app-banner-root` implementa o padrão **App-of-Apps** no Argo CD. Em vez de gerenciar cada ambiente manualmente de forma individual, uma única aplicação "pai" sincroniza os manifestos contidos em `argocd/applications/`:
 
-- **Single Entrypoint (Bootstrap)**: One command (`kubectl apply -f app-root.yaml`) allows Argo CD to discover and instantiate all cluster applications (`dev`, `stg`, `prd`).
-- **Declarative Git Management**: Adding, modifying, or removing an environment YAML in `argocd/applications/` automatically updates or deletes the corresponding card in the cluster.
-- **Self-Healing**: If an operator manually deletes an environment card (e.g. `app-banner-dev`) via Argo CD UI, the root application (`app-banner-root`) detects drift and **recreates the card automatically** in seconds.
+- **Ponto de Entrada Único (Bootstrap)**: Um único comando (`kubectl apply -f app-root.yaml`) permite que o Argo CD descubra e instancie todas as aplicações do cluster (`dev`, `stg`, `prd`).
+- **Gerenciamento Declarativo via Git**: Adicionar, alterar ou remover um YAML de ambiente em `argocd/applications/` atualiza ou deleta automaticamente o card correspondente no cluster.
+- **Self-Healing**: Se um operador excluir manualmente um card de ambiente (ex: `app-banner-dev`) pela UI do Argo CD, a aplicação raiz (`app-banner-root`) detecta a divergência e **recria o card automaticamente** em poucos segundos.
 
 ---
 
-### Option 2: Scripted Automation (Fast)
+### Opção 2: Automação por Script (Rápida)
 
-To provision the complete lab automatically with a single command:
+Para provisionar o lab completo automaticamente com um único comando:
 
 ```bash
 kustomize-env-demo/scripts/create-lab.sh
 ```
-*(The script creates the `kind` cluster, installs Argo CD, applies applications via App-of-Apps, and displays initial `admin` credentials).*
+*(O script cria o cluster `kind`, instala o Argo CD, aplica aplicações via App-of-Apps e exibe credenciais iniciais do `admin`).*
 
 ---
 
-## 🌐 Accessing Applications & Argo CD UI
+## 🌐 Acessando Aplicações & UI do Argo CD
 
-### 1. Access Environments via Browser (Port-Forward)
+### 1. Acessar Ambientes via Navegador (Port-Forward)
 
-Open port-forwards for each environment (in separate terminals):
+Abra port-forwards para cada ambiente (em terminais separados):
 
 ```bash
-# DEV Environment
+# Ambiente DEV
 kubectl -n app-banner-dev port-forward svc/app-banner 8081:80
-# Access in browser: http://localhost:8081  (Blue Banner - DEVELOPMENT)
+# Acessar no navegador: http://localhost:8081  (Banner Azul - DEVELOPMENT)
 
-# STG Environment
+# Ambiente STG
 kubectl -n app-banner-stg port-forward svc/app-banner 8082:80
-# Access in browser: http://localhost:8082  (Yellow Banner - STAGING)
+# Acessar no navegador: http://localhost:8082  (Banner Amarelo - STAGING)
 
-# PRD Environment
+# Ambiente PRD
 kubectl -n app-banner-prd port-forward svc/app-banner 8083:80
-# Access in browser: http://localhost:8083  (Green Banner - PRODUCTION)
+# Acessar no navegador: http://localhost:8083  (Banner Verde - PRODUCTION)
 ```
 
-Quick terminal verification:
+Verificação rápida no terminal:
 ```bash
 curl -fsS http://localhost:8081 | grep DEVELOPMENT
 curl -fsS http://localhost:8082 | grep STAGING
 curl -fsS http://localhost:8083 | grep PRODUCTION
 ```
 
-### 2. Access Argo CD Web Dashboard
+### 2. Acessar o Dashboard Web do Argo CD
 
 ```bash
 kubectl -n argocd port-forward svc/argocd-server 8088:443
 ```
 - **URL**: `https://localhost:8088`
-- **Username**: `admin`
-- **Password**: Retrieved in Step 6 (or shown in `create-lab.sh` output).
+- **Usuário**: `admin`
+- **Senha**: Obtida no Passo 6 (ou exibida na saída do `create-lab.sh`).
 
-### 3. Access via Cloudflare Tunnel (Optional - No Port-Forward)
+### 3. Acessar via Cloudflare Tunnel (Opcional - Sem Port-Forward)
 
-To expose environments (**DEV**, **STG**, **PRD**) and **Argo CD** publicly on the web with automatic HTTPS without opening local ports:
-- 🌐 **[Cloudflare Tunnel Guide](CLOUDFLARE_GUIDE.md)** (`CLOUDFLARE_GUIDE.md`)
+Para expor os ambientes (**DEV**, **STG**, **PRD**) e o **Argo CD** publicamente na web com HTTPS automático sem abrir portas locais:
+- 🌐 **[Guia do Cloudflare Tunnel](CLOUDFLARE_GUIDE.md)** (`CLOUDFLARE_GUIDE.md`)
 
 ---
 
-## 🧪 Testing Overlay Isolation
+## 🧪 Testando Isolamento de Overlays
 
-Kustomize allows modifying configurations for a single environment without impacting others:
+O Kustomize permite alterar configurações para um único ambiente sem impactar os demais:
 
-1. Modify color or text in `kustomize-env-demo/overlays/dev/kustomization.yaml`.
-2. Apply changes to DEV environment:
+1. Altere a cor ou o texto em `kustomize-env-demo/overlays/dev/kustomization.yaml`.
+2. Aplique alterações no ambiente DEV:
    ```bash
    kubectl apply -k kustomize-env-demo/overlays/dev
    ```
-3. Verify STG and PRD maintained original configurations:
+3. Verifique se STG e PRD mantiveram suas configurações originais:
    ```bash
    kubectl kustomize kustomize-env-demo/overlays/stg | grep STAGING
    kubectl kustomize kustomize-env-demo/overlays/prd | grep PRODUCTION
@@ -200,64 +200,26 @@ Kustomize allows modifying configurations for a single environment without impac
 
 ---
 
-## 💡 Building Multi-Arch Images (`docker buildx`)
+## 💡 Gerando & Atualizando Tag da Imagem (Opcional - v2)
 
-To build images compatible with **both x86_64/amd64 and ARM64 clusters** (e.g. OCI Ampere nodes + local kind/Docker Desktop):
+Para testar a atualização da versão da imagem no lab (gerando e enviando a tag `v2` para o Docker Hub):
 
-1. **Build & Push Multi-Arch Image (e.g. `v1` or `v2`)**:
-   Navigate to the application directory `kustomize-env-demo/app` (or run from repo root passing `kustomize-env-demo/app` as context):
+1. **Gerar & Enviar Nova Imagem (`v2`)**:
+   A flag `--build-arg APP_VERSION=v2` insere a tag **V2** diretamente no HTML da página:
 
    ```bash
-   cd kustomize-env-demo/app
+   cd /caminho/para/kubernetes
+
+   # 1) Build da imagem com a tag v2 (substitua 'seu-usuario' pela conta no Docker Hub)
+   docker build --build-arg APP_VERSION=v2 -t seu-usuario/app-banner:v2 kustomize-env-demo/app
+
+   # 2) Login & Push para o Docker Hub
+   docker login -u seu-usuario
+   docker push seu-usuario/app-banner:v2
    ```
 
-   - **Option 1: Use Existing Builder or Create if Missing**
-     Flag `--build-arg APP_VERSION=v1` embeds the version label directly into the HTML page:
-
-     ```bash
-     # 1) Enable multi-arch builder
-     docker buildx create --use --name multi-builder || docker buildx use multi-builder
-
-     # 2) Build and push multi-architecture image (x86_64 + ARM64)
-     docker buildx build \
-       --platform linux/amd64,linux/arm64 \
-       --build-arg APP_VERSION=v1 \
-       -t your-user/app-banner:v1 \
-       --push .
-     ```
-
-   - **Option 2: Recreate / Reset Builder (If `multi-builder` instance already exists or encounters errors)**
-     If you encounter `ERROR: existing instance for "multi-builder"` or want to reset the builder:
-
-     ```bash
-     # 1) Remove existing builder instance
-     docker buildx rm multi-builder
-
-     # 2) Recreate and bootstrap multi-arch builder
-     docker buildx create --name multi-builder --use --bootstrap
-
-     # 3) Build and push multi-architecture image
-     docker buildx build \
-       --platform linux/amd64,linux/arm64 \
-       --build-arg APP_VERSION=v1 \
-       -t your-user/app-banner:v1 \
-       --push .
-     ```
-
-   > 💡 **Tip (creating version `v2` in the future):**
-   > When testing application updates in Kustomize / Argo CD (e.g. `v2`), update the `--build-arg` and image tag `-t`:
-   > ```bash
-   > docker buildx build \
-   >   --platform linux/amd64,linux/arm64 \
-   >   --build-arg APP_VERSION=v2 \
-   >   -t your-user/app-banner:v2 \
-   >   --push .
-   > ```
-
-   > **Note:** To run `docker buildx build ...` with `.` as context, ensure you are inside `kustomize-env-demo/app`. If executing from repository root (`kubernetes/`), pass `kustomize-env-demo/app` as context path instead of `.`.
-
-2. **Update Image in Kustomize**:
-   Edit target overlay (e.g. `kustomize-env-demo/overlays/dev/kustomization.yaml`) adding or modifying image replacement patch:
+2. **Atualizar Imagem no Kustomize**:
+   Edite o overlay alvo (ex: `kustomize-env-demo/overlays/dev/kustomization.yaml`) adicionando ou modificando o patch de substituição de imagem:
 
    ```yaml
    patches:
@@ -267,35 +229,35 @@ To build images compatible with **both x86_64/amd64 and ARM64 clusters** (e.g. O
        patch: |-
          - op: replace
            path: /spec/template/spec/containers/0/image
-           value: your-user/app-banner:v2
+           value: seu-usuario/app-banner:v2
    ```
 
-3. **Apply & Verify Update**:
+3. **Aplicar & Validar Atualização**:
    ```bash
    kubectl apply -k kustomize-env-demo/overlays/dev
    ```
-   Access application in browser (`http://localhost:8081`) and verify version **V2** banner displayed.
+   Acesse a aplicação no navegador (`http://localhost:8081`) e confirme a exibição do banner **V2**.
 
 ---
 
-## 🧹 Teardown Lab
+## 🧹 Limpeza do Lab
 
-When finished testing and ready to clean up local resources:
+Ao finalizar os testes e quando desejar remover os recursos locais:
 
-### Option 1: Scripted Teardown
+### Opção 1: Limpeza por Script
 ```bash
 kustomize-env-demo/scripts/delete-lab.sh
 ```
-*(The script prompts for confirmation before removing cluster `kustomize-demo` and resources).*
+*(O script solicitará confirmação antes de remover o cluster `kustomize-demo` e seus recursos).*
 
-### Option 2: Manual Teardown
+### Opção 2: Limpeza Manual
 
-To delete `kind` cluster and all resources at once:
+Para deletar o cluster `kind` e todos os recursos de uma vez:
 ```bash
 kind delete cluster --name kustomize-demo
 ```
 
-To delete applications while keeping `kind` cluster active:
+Para deletar as aplicações mantendo o cluster `kind` ativo:
 ```bash
 kubectl delete -k kustomize-env-demo/overlays/dev --ignore-not-found
 kubectl delete -k kustomize-env-demo/overlays/stg --ignore-not-found
@@ -305,24 +267,24 @@ kubectl delete ns app-banner-dev app-banner-stg app-banner-prd --ignore-not-foun
 
 ---
 
-## 📁 Repository Structure
+## 📁 Estrutura do Repositório
 
 ```text
 kustomize-env-demo/
-├── app/                 # Source code for HTML template application
-├── base/                # Base manifests (common Deployment + Service)
-├── overlays/            # Environment-specific patches
-│   ├── dev/             # DEV environment patch (blue, DEVELOPMENT)
-│   ├── stg/             # STG environment patch (yellow, STAGING)
-│   └── prd/             # PRD environment patch (green, PRODUCTION)
-├── argocd/              # Argo CD manifests and configuration
-│   ├── app-root.yaml    # Root Application (App-of-Apps)
-│   └── applications/    # Child Applications (dev, stg, prd)
-├── cloudflare/          # Manifests for Cloudflare Tunnel exposure
-│   └── cloudflared.yaml # Cloudflared agent Deployment in cluster
-├── scripts/             # Utility scripts
-│   ├── create-lab.sh    # Creates kind cluster, installs Argo CD, Cloudflare, and applies apps
-│   └── delete-lab.sh    # Removes resources and deletes kind cluster
-├── .env.example         # Environment variable template (Cloudflare token)
-└── CLOUDFLARE_GUIDE.md  # Complete guide for Cloudflare Tunnel exposure
+├── app/                 # Código fonte para aplicação de template HTML
+├── base/                # Manifestos base (Deployment + Service comuns)
+├── overlays/            # Patches específicos por ambiente
+│   ├── dev/             # Patch do ambiente DEV (azul, DEVELOPMENT)
+│   ├── stg/             # Patch do ambiente STG (amarelo, STAGING)
+│   └── prd/             # Patch do ambiente PRD (verde, PRODUCTION)
+├── argocd/              # Manifestos e configurações do Argo CD
+│   ├── app-root.yaml    # Aplicação Raiz (App-of-Apps)
+│   └── applications/    # Aplicações Filhas (dev, stg, prd)
+├── cloudflare/          # Manifestos para exposição via Cloudflare Tunnel
+│   └── cloudflared.yaml # Deployment do agente Cloudflared no cluster
+├── scripts/             # Scripts utilitários
+│   ├── create-lab.sh    # Cria cluster kind, instala Argo CD, Cloudflare e aplica apps
+│   └── delete-lab.sh    # Remove recursos e deleta o cluster kind
+├── .env.example         # Template de variáveis de ambiente (token Cloudflare)
+└── CLOUDFLARE_GUIDE.md  # Guia completo para exposição via Cloudflare Tunnel
 ```

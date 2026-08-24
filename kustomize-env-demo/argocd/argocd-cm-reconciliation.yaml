@@ -1,5 +1,5 @@
-# Patch applied after the official Argo CD install (kind-up.sh).
-# Default reconciliation is 180s; this sets Git/cluster poll to 1 minute.
+# Patch aplicado após a instalação oficial do Argo CD (create-lab.sh).
+# A reconciliação padrão é de 180s; isso ajusta a busca no Git/cluster para 1 minuto.
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -1,6 +1,6 @@
 #!/bin/bash
-# Provisions legacy lab: Kind + Postgres + Kong + Konga + demo sites.
-# Usage: bash scripts/install-base.sh
+# Provisiona o lab legado: Kind + Postgres + Kong + Konga + sites de demonstração.
+# Uso: bash scripts/install-base.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,7 +10,7 @@ cd "$ROOT"
 
 echo "=== Kind Cluster ==="
 if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
-  echo "[!] Cluster '$CLUSTER_NAME' already exists; reusing."
+  echo "[!] Cluster '$CLUSTER_NAME' já existe; reutilizando."
 else
   kind create cluster --config cluster.yaml
 fi
@@ -25,13 +25,13 @@ ensure_kong_crds() {
   local marker="kongplugins.configuration.konghq.com"
 
   if kubectl get crd "$marker" &>/dev/null; then
-    echo "[*] Kong CRDs already present in cluster."
+    echo "[*] CRDs do Kong já presentes no cluster."
     return 0
   fi
 
-  echo "[*] Kong CRDs missing; installing from kong/kong chart..."
+  echo "[*] CRDs do Kong ausentes; instalando a partir do chart kong/kong..."
   if helm show crds kong/kong 2>/dev/null | kubectl apply -f -; then
-    echo "[v] CRDs applied via helm show crds."
+    echo "[v] CRDs aplicadas via helm show crds."
     return 0
   fi
 
@@ -41,10 +41,10 @@ ensure_kong_crds() {
 
   helm pull kong/kong --untar -d "$tmp"
   kubectl apply -f "$tmp/kong/crds/"
-  echo "[v] CRDs applied via helm pull."
+  echo "[v] CRDs aplicadas via helm pull."
 }
 
-echo "=== Images ==="
+echo "=== Imagens ==="
 for image in \
   postgres:11-alpine \
   kong:3.4.2 \
@@ -69,7 +69,7 @@ helm repo update
 
 ensure_kong_crds
 
-# --skip-crds: CRDs already exist without Helm release metadata.
+# --skip-crds: CRDs já existem sem metadados de release do Helm.
 helm upgrade --install kong kong/kong \
   --namespace lab-kong \
   --create-namespace \

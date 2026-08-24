@@ -1,25 +1,25 @@
-# Kong + Konga Lab
+# Lab Kong + Konga
 
-Local **Kind** lab for validating Kong Gateway with PostgreSQL, Kong Ingress Controller, Konga, and two Nginx applications exposed via Kong Proxy.
+Lab local do **Kind** para validação do Kong Gateway com PostgreSQL, Kong Ingress Controller, Konga e duas aplicações Nginx expostas via Kong Proxy.
 
-## Components
+## Componentes
 
-| Component | Version | Purpose |
+| Componente | Versão | Objetivo |
 |---|---|---|
-| Kong Gateway | `3.4.2` | Gateway runtime & proxy |
-| Kong Ingress Controller | `3.2.1` | Ingress reconciliation & Kong CRDs |
-| PostgreSQL | `11-alpine` | `kong` and `konga` databases |
-| Konga | `0.14.9` | Admin UI connected to Kong Admin API |
-| Nginx | `alpine` | Demo test web applications |
+| Kong Gateway | `3.4.2` | Runtime e proxy do Gateway |
+| Kong Ingress Controller | `3.2.1` | Reconciliação de Ingress e CRDs do Kong |
+| PostgreSQL | `11-alpine` | Bancos de dados `kong` e `konga` |
+| Konga | `0.14.9` | Interface de administração conectada à Admin API do Kong |
+| Nginx | `alpine` | Aplicações web de teste para demonstração |
 
-## Architecture Flow
+## Fluxo de Arquitetura
 
 ```text
 localhost:8000
   -> Kong Proxy
   -> Ingress
   -> Service
-  -> apps/public-site or apps/admin-site
+  -> apps/public-site ou apps/admin-site
 
 localhost:1337
   -> Konga UI
@@ -27,64 +27,64 @@ localhost:1337
   -> PostgreSQL
 ```
 
-## Applications & Authentication
+## Aplicações & Autenticação
 
-| Resource | Local URL | Authentication | Source |
+| Recurso | URL Local | Autenticação | Origem |
 |---|---|---|---|
-| Public site | `http://localhost:8000/site` | None | `apps/public-site` |
-| Public site | `http://localhost:8000/portal` | None | `apps/public-site` |
-| Public site | `http://localhost:8000/home` | None | `apps/public-site` |
-| Public site | `http://localhost:8000/app` | None | `apps/public-site` |
-| Admin site | `http://localhost:8000/admin` | Kong Basic Auth Plugin | `apps/admin-site` |
-| Konga UI | `http://localhost:1337` | User created on first login | `konga/konga.yaml` |
+| Site Público | `http://localhost:8000/site` | Nenhuma | `apps/public-site` |
+| Site Público | `http://localhost:8000/portal` | Nenhuma | `apps/public-site` |
+| Site Público | `http://localhost:8000/home` | Nenhuma | `apps/public-site` |
+| Site Público | `http://localhost:8000/app` | Nenhuma | `apps/public-site` |
+| Site Admin | `http://localhost:8000/admin` | Plugin Kong Basic Auth | `apps/admin-site` |
+| Konga UI | `http://localhost:1337` | Usuário criado no primeiro acesso | `konga/konga.yaml` |
 
-The `rate-limit` plugin is applied to public routes. The `admin-basic-auth` plugin protects only `/admin`.
+O plugin de `rate-limit` é aplicado às rotas públicas. O plugin `admin-basic-auth` protege exclusivamente a rota `/admin`.
 
-## Lab Credentials
+## Credenciais do Lab
 
-| Component | Username | Password |
+| Componente | Usuário | Senha |
 |---|---|---|
-| PostgreSQL database `kong` | `kong` | `kong` |
-| PostgreSQL database `konga` | `konga` | `konga` |
-| Kong Basic Auth on `/admin` | `admin` | `admin123` |
+| Banco de dados PostgreSQL `kong` | `kong` | `kong` |
+| Banco de dados PostgreSQL `konga` | `konga` | `konga` |
+| Kong Basic Auth no `/admin` | `admin` | `admin123` |
 
-## Prerequisites
+## Pré-requisitos
 
 - Docker
 - Kind
 - kubectl
 - Helm
 
-## Provisioning Lab
+## Provisionamento do Lab
 
 ```bash
 cd ~/kubernetes/kong+konga
 bash scripts/install-base.sh
 ```
 
-The script:
+O script:
 
-1. Creates or reuses Kind cluster `lab`
-2. Pulls fixed lab images
-3. Applies namespaces and PostgreSQL
-4. Installs Kong CRDs and Helm chart
-5. Applies Konga, plugins, and Nginx applications
+1. Cria ou reutiliza o cluster Kind `lab`
+2. Baixa imagens fixas do lab
+3. Aplica namespaces e o PostgreSQL
+4. Instala as CRDs do Kong e o chart Helm
+5. Aplica o Konga, plugins e aplicações Nginx
 
-## Port-forwarding
+## Redirecionamento de Portas (Port-forwarding)
 
-Execute in separate terminals:
+Execute em terminais separados:
 
 ```bash
 bash scripts/port-forward.sh
 bash scripts/port-forward-konga.sh
 ```
 
-| Script | Local Port | Destination |
+| Script | Porta Local | Destino |
 |---|---|---|
-| `scripts/port-forward.sh` | `8000` | Service `kong-kong-proxy` |
-| `scripts/port-forward-konga.sh` | `1337` | Service `konga` |
+| `scripts/port-forward.sh` | `8000` | Serviço `kong-kong-proxy` |
+| `scripts/port-forward-konga.sh` | `1337` | Serviço `konga` |
 
-## Verification
+## Verificação
 
 ```bash
 kubectl get nodes
@@ -99,71 +99,71 @@ curl -i -u admin:admin123 http://localhost:8000/admin
 
 ## PostgreSQL
 
-Lab PostgreSQL runs in namespace **`lab-kong`**, Service **`postgres:5432`**, image **PostgreSQL 11**. Inside cluster auth is in **`trust`** mode (no password required inside pod `psql`); credentials above apply when connecting externally via port-forward.
+O PostgreSQL do lab roda no namespace **`lab-kong`**, Serviço **`postgres:5432`**, imagem **PostgreSQL 11**. A autenticação interna no cluster está em modo **`trust`** (não exige senha dentro do pod `psql`); as credenciais acima se aplicam ao conectar externamente via port-forward.
 
-| Database | Owner / Usage |
+| Banco de Dados | Proprietário / Uso |
 | ------- | ----------------------------------------------------------- |
-| `kong` | Kong Gateway data (routes, services, plugins, consumers) |
-| `konga` | Konga UI data |
+| `kong` | Dados do Kong Gateway (rotas, serviços, plugins, consumidores) |
+| `konga` | Dados da interface Konga |
 
-## Accessing Postgres Shell
+## Acessando o Shell do Postgres
 
 ```bash
 kubectl config use-context kind-lab
 
-# Interactive shell in Postgres pod
+# Shell interativo no pod do Postgres
 kubectl exec -it -n lab-kong deploy/postgres -- sh
 
-# Inside pod, connect to kong database with kong user
+# Dentro do pod, conecte-se ao banco kong com o usuário kong
 psql -U kong -d kong
 ```
 
-One-line shortcut without opening pod shell:
+Atalho de linha única sem abrir o shell do pod:
 
 ```bash
 kubectl exec -it -n lab-kong deploy/postgres -- psql -U kong -d kong
 ```
 
-Connect directly to Konga database:
+Conectar diretamente ao banco de dados do Konga:
 
 ```bash
 kubectl exec -it -n lab-kong deploy/postgres -- psql -U konga -d konga
 ```
 
-Switch databases inside `psql`:
+Alternar entre bancos de dados dentro do `psql`:
 
 ```sql
-\c konga    -- connect to konga database
-\c kong     -- return to kong database
+\c konga    -- conecta ao banco de dados konga
+\c kong     -- retorna ao banco de dados kong
 ```
 
-Check current connection:
+Verificar conexão atual:
 
 ```sql
 \conninfo
 ```
 
-Exit `psql`:
+Sair do `psql`:
 
 ```sql
 \q
 ```
 
-Exit pod:
+Sair do pod:
 
 ```bash
 exit
 ```
 
-## PostgreSQL Users vs Konga UI Users
+## Usuários do PostgreSQL vs Usuários da UI do Konga
 
-The command below lists **PostgreSQL roles**:
+O comando abaixo lista os **roles do PostgreSQL**:
 
 ```sql
 \du
 ```
 
-Expected output:
+Saída esperada:
 
 ```text
 Role name | Attributes
@@ -172,43 +172,43 @@ kong      | Superuser, Create role, Create DB, Replication, Bypass RLS
 konga     |
 ```
 
-These roles are used by application services to connect to PostgreSQL:
+Estes roles são utilizados pelos serviços de aplicação para conectar ao PostgreSQL:
 
 ```text
-kong  -> used by Kong Gateway
-konga -> used by Konga Application
+kong  -> utilizado pelo Kong Gateway
+konga -> utilizado pela aplicação Konga
 ```
 
-A user created inside Konga Web UI (e.g. `aleon`) does not appear in `\du` because it is an **application user**, saved in `konga` database tables.
+Um usuário criado dentro da interface Web do Konga (ex: `aleon`) não aparece no `\du` por ser um **usuário de aplicação**, salvo nas tabelas do banco de dados `konga`.
 
-## Inspecting Konga Web UI Users
+## Inspecionando Usuários da UI Web do Konga
 
-Connect to `konga` database:
+Conecte-se ao banco de dados `konga`:
 
 ```bash
 kubectl exec -it -n lab-kong deploy/postgres -- psql -U konga -d konga
 ```
 
-List tables:
+Listar tabelas:
 
 ```sql
 \dt
 ```
 
-Web UI users table is:
+A tabela de usuários da UI Web é:
 
 ```text
 konga_users
 ```
 
-Query all web UI users:
+Consultar todos os usuários da UI Web:
 
 ```sql
 SELECT id, username, email, admin, active, "createdAt", "updatedAt"
 FROM konga_users;
 ```
 
-Query specific user:
+Consultar usuário específico:
 
 ```sql
 SELECT id, username, email, admin, active, "createdAt", "updatedAt"
@@ -216,111 +216,111 @@ FROM konga_users
 WHERE username = 'aleon';
 ```
 
-## Helpful `psql` Meta-commands
+## Meta-comandos Úteis do `psql`
 
 ```text
-\?                -- help on psql commands
-\l                -- list databases
-\du               -- list roles/users
-\conninfo         -- show current connection
-\dt               -- list tables
-\d+ services      -- describe table
-\x on             -- enable expanded output
-\x off            -- disable expanded output
-\q                -- quit
+\?                -- ajuda sobre comandos do psql
+\l                -- listar bancos de dados
+\du               -- listar roles/usuários
+\conninfo         -- exibir conexão atual
+\dt               -- listar tabelas
+\d+ services      -- descrever tabela
+\x on             -- habilitar saída expandida
+\x off            -- desabilitar saída expandida
+\q                -- sair
 ```
 
-## Useful SQL Diagnostics
+## Diagnósticos SQL Úteis
 
 ```sql
--- Databases
+-- Bancos de dados
 SELECT datname
 FROM pg_database
 WHERE datistemplate = false
 ORDER BY 1;
 
--- Database sizes
+-- Tamanho dos bancos de dados
 SELECT datname, pg_size_pretty(pg_database_size(datname)) AS size
 FROM pg_database
 WHERE datistemplate = false
 ORDER BY datname;
 ```
 
-## Useful Queries in `kong` Database
+## Consultas Úteis no Banco `kong`
 
-Connect to `kong` database:
+Conecte-se ao banco de dados `kong`:
 
 ```sql
 \c kong
 ```
 
-View services created in Kong:
+Visualizar serviços criados no Kong:
 
 ```sql
 SELECT id, name, host, path, protocol, "created_at"
 FROM services;
 ```
 
-View routes created in Kong:
+Visualizar rotas criadas no Kong:
 
 ```sql
 SELECT id, name, protocols, paths, hosts, "created_at"
 FROM routes;
 ```
 
-View active plugins:
+Visualizar plugins ativos:
 
 ```sql
 SELECT id, name, enabled, "created_at"
 FROM plugins;
 ```
 
-View Kong consumers:
+Visualizar consumidores do Kong:
 
 ```sql
 SELECT id, username, custom_id, "created_at"
 FROM consumers;
 ```
 
-## One-liners with `kubectl exec`
+## Linhas Únicas com `kubectl exec`
 
-List databases:
+Listar bancos de dados:
 
 ```bash
 kubectl exec -n lab-kong deploy/postgres -- \
   psql -U kong -d kong -c "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY 1;"
 ```
 
-List PostgreSQL roles:
+Listar roles do PostgreSQL:
 
 ```bash
 kubectl exec -n lab-kong deploy/postgres -- \
   psql -U kong -d kong -c "SELECT rolname, rolcanlogin FROM pg_roles ORDER BY 1;"
 ```
 
-Connect as `kong` user:
+Conectar como usuário `kong`:
 
 ```bash
 kubectl exec -it -n lab-kong deploy/postgres -- psql -U kong -d kong
 ```
 
-## Connecting from Host via `psql`
+## Conectando a partir do Host via `psql`
 
-Requires `psql` client installed on host machine.
+Requer cliente `psql` instalado na máquina host.
 
-Forward Postgres port:
+Redirecionar porta do Postgres:
 
 ```bash
 kubectl port-forward -n lab-kong svc/postgres 5432:5432 --address 127.0.0.1
 ```
 
-Connect from host:
+Conectar a partir do host:
 
 ```bash
 psql -h 127.0.0.1 -p 5432 -U kong -d kong
 ```
 
-## Quick Diagnostic Commands
+## Comandos Rápidos de Diagnóstico
 
 ```bash
 kubectl get pods,svc,endpoints -n lab-kong -l app=postgres
@@ -328,7 +328,7 @@ kubectl logs -n lab-kong deploy/postgres --tail=30
 kubectl exec -n lab-kong deploy/postgres -- pg_isready -U kong -d kong
 ```
 
-## Teardown
+## Limpeza
 
 ```bash
 bash scripts/cleanup.sh

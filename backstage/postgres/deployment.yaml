@@ -27,11 +27,11 @@ spec:
                 name: postgres-secrets
           env:
             - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata # Subfolder adjustment to avoid permission error
+              value: /var/lib/postgresql/data/pgdata # Ajuste de subpasta para evitar erro de permissão
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgresdb
-              # subPath removed to simplify and avoid mount errors on some storage providers
+              # subPath removido para simplificar e evitar erros de montagem em alguns provedores de armazenamento
       volumes:
         - name: postgresdb
           persistentVolumeClaim:

@@ -1,9 +1,9 @@
-# Parent Application (App-of-Apps).
-# Syncs every Application YAML under applications/ into the argocd namespace.
-# If you delete app-banner-dev in the UI, selfHeal recreates it from Git.
+# Aplicação Pai (App-of-Apps).
+# Sincroniza todos os YAMLs de Aplicação sob applications/ no namespace argocd.
+# Se você excluir app-banner-dev na UI, o selfHeal recria a partir do Git.
 #
-# Bootstrap once:
-#   kubectl apply -f kustomize-env-demo/argocd/root-app.yaml
+# Bootstrap único:
+#   kubectl apply -f kustomize-env-demo/argocd/app-root.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

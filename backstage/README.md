@@ -1,8 +1,8 @@
-# Backstage on Kubernetes
+# Backstage no Kubernetes
 
-Kubernetes manifests to deploy a Backstage Developer Portal instance with PostgreSQL in the `backstage` namespace.
+Manifestos do Kubernetes para implantar uma instância do Portal do Desenvolvedor Backstage com PostgreSQL no namespace `backstage`.
 
-## Structure
+## Estrutura
 
 ```text
 backstage/
@@ -23,55 +23,55 @@ backstage/
     `-- service.yaml
 ```
 
-## Components
+## Componentes
 
-| Path | Description |
+| Caminho | Descrição |
 | --- | --- |
-| `namespace.yaml` | Creates `backstage` namespace. |
-| `config/app-config.yaml` | ConfigMap containing Backstage configuration. |
-| `secrets/postgres-secrets.yaml` | Defines base64-encoded `POSTGRES_USER` and `POSTGRES_PASSWORD`. |
-| `secrets/backstage-secrets.yaml` | Defines base64-encoded `GITHUB_TOKEN`. |
-| `postgres/storage.yaml` | Creates local PV and PVC (`2G`) using `hostPath` at `/mnt/data`. |
-| `postgres/deployment.yaml` | Deploys PostgreSQL `13.2-alpine`. |
-| `postgres/service.yaml` | Creates internal Service `postgres` on port `5432`. |
-| `backstage/deployment.yaml` | Deploys Backstage using image `iocanel/backstage:latest`. |
-| `backstage/service.yaml` | Exposes Backstage via `NodePort` Service on port `30081`. |
-| `start.sh` | Applies manifests in order and opens local port-forward. |
+| `namespace.yaml` | Cria o namespace `backstage`. |
+| `config/app-config.yaml` | ConfigMap contendo as configurações do Backstage. |
+| `secrets/postgres-secrets.yaml` | Define `POSTGRES_USER` e `POSTGRES_PASSWORD` codificados em base64. |
+| `secrets/backstage-secrets.yaml` | Define `GITHUB_TOKEN` codificado em base64. |
+| `postgres/storage.yaml` | Cria PV e PVC locais (`2G`) usando `hostPath` em `/mnt/data`. |
+| `postgres/deployment.yaml` | Implanta o PostgreSQL `13.2-alpine`. |
+| `postgres/service.yaml` | Cria o Serviço interno `postgres` na porta `5432`. |
+| `backstage/deployment.yaml` | Implanta o Backstage usando a imagem `iocanel/backstage:latest`. |
+| `backstage/service.yaml` | Expõe o Backstage via Serviço `NodePort` na porta `30081`. |
+| `start.sh` | Aplica os manifestos em ordem e abre o port-forward local. |
 
-## Prerequisites
+## Pré-requisitos
 
-- Active Kubernetes cluster.
-- `kubectl` configured pointing to target cluster.
-- Permissions to create `Namespace`, `PersistentVolume`, `PersistentVolumeClaim`, `Deployment`, `Service`, `ConfigMap`, and `Secret`.
-- Path `/mnt/data` available on node running PostgreSQL.
+- Cluster Kubernetes ativo.
+- `kubectl` configurado apontando para o cluster alvo.
+- Permissões para criar `Namespace`, `PersistentVolume`, `PersistentVolumeClaim`, `Deployment`, `Service`, `ConfigMap` e `Secret`.
+- Caminho `/mnt/data` disponível no nó que executará o PostgreSQL.
 
-## Automated Setup via Script
+## Configuração Automatizada via Script
 
-Execute from this directory:
+Execute a partir deste diretório:
 
 ```bash
 chmod +x start.sh
 ./start.sh
 ```
 
-The script performs the following steps:
+O script realiza as seguintes etapas:
 
-1. Creates namespace.
-2. Applies secrets and ConfigMap.
-3. Provisions storage, Deployment, and Service for PostgreSQL.
-4. Provisions Deployment and Service for Backstage.
-5. Waits for Backstage pod to become ready.
-6. Opens port-forward for `http://localhost:8081`.
+1. Cria o namespace.
+2. Aplica secrets e o ConfigMap.
+3. Provisiona armazenamento, Deployment e Serviço para o PostgreSQL.
+4. Provisiona Deployment e Serviço para o Backstage.
+5. Aguarda o pod do Backstage ficar pronto.
+6. Abre o port-forward para `http://localhost:8081`.
 
-## Manual Setup
+## Configuração Manual
 
-Execute from this directory:
+Execute a partir deste diretório:
 
 ```bash
 kubectl apply -f namespace.yaml
 ```
 
-Apply secrets and configurations:
+Aplicar segredos e configurações:
 
 ```bash
 kubectl apply -f secrets/postgres-secrets.yaml
@@ -79,7 +79,7 @@ kubectl apply -f secrets/backstage-secrets.yaml
 kubectl apply -f config/app-config.yaml
 ```
 
-Deploy PostgreSQL:
+Implantar o PostgreSQL:
 
 ```bash
 kubectl apply -f postgres/storage.yaml
@@ -87,78 +87,78 @@ kubectl apply -f postgres/deployment.yaml
 kubectl apply -f postgres/service.yaml
 ```
 
-Deploy Backstage:
+Implantar o Backstage:
 
 ```bash
 kubectl apply -f backstage/deployment.yaml
 kubectl apply -f backstage/service.yaml
 ```
 
-Wait for Backstage to be ready:
+Aguardar o Backstage ficar pronto:
 
 ```bash
 kubectl wait --for=condition=ready pod -l app=backstage -n backstage --timeout=120s
 ```
 
-Open local access:
+Abrir acesso local:
 
 ```bash
 kubectl port-forward svc/backstage 8081:8081 -n backstage
 ```
 
-Access via browser:
+Acessar via navegador:
 
 ```text
 http://localhost:8081
 ```
 
-Or via NodePort:
+Ou via NodePort:
 
 ```text
 http://localhost:30081
 ```
 
-## Verification
+## Verificação
 
-List namespace resources:
+Listar recursos do namespace:
 
 ```bash
 kubectl get all -n backstage
 ```
 
-Verify pods:
+Verificar pods:
 
 ```bash
 kubectl get pods -n backstage
 ```
 
-View Backstage logs:
+Visualizar logs do Backstage:
 
 ```bash
 kubectl logs -n backstage deployment/backstage
 ```
 
-View PostgreSQL logs:
+Visualizar logs do PostgreSQL:
 
 ```bash
 kubectl logs -n backstage deployment/postgres
 ```
 
-## Secrets
+## Segredos (Secrets)
 
-Base64 encoded secrets:
+Segredos codificados em base64:
 
 - `POSTGRES_USER`: `backstage`
 - `POSTGRES_PASSWORD`: `hunter2`
-- `GITHUB_TOKEN`: token used by Backstage application
+- `GITHUB_TOKEN`: token utilizado pela aplicação Backstage
 
-To update a value, generate base64 encoding:
+Para atualizar um valor, gere a codificação em base64:
 
 ```bash
-echo -n 'new-value' | base64
+echo -n 'novo-valor' | base64
 ```
 
-Edit target file and re-apply:
+Edite o arquivo alvo e aplique novamente:
 
 ```bash
 kubectl apply -f secrets/postgres-secrets.yaml
@@ -166,9 +166,9 @@ kubectl apply -f secrets/backstage-secrets.yaml
 kubectl rollout restart deployment/backstage -n backstage
 ```
 
-## Configuration
+## Configuração
 
-`config/app-config.yaml` defines:
+O `config/app-config.yaml` define:
 
 - `app.baseUrl`: `http://localhost:8081`
 - `backend.baseUrl`: `http://localhost:8081`
@@ -176,12 +176,12 @@ kubectl rollout restart deployment/backstage -n backstage
 - `backend.cors.origin`: `http://localhost:8081`
 - `organization.name`: `Spotify`
 
-## Teardown
+## Limpeza
 
-Delete namespace resources:
+Deletar recursos do namespace:
 
 ```bash
 kubectl delete namespace backstage
 ```
 
-Note: Since PersistentVolume uses `persistentVolumeReclaimPolicy: Retain`, data in `/mnt/data` may persist on node after namespace deletion.
+Nota: Como o PersistentVolume utiliza `persistentVolumeReclaimPolicy: Retain`, os dados em `/mnt/data` podem permanecer no nó após a exclusão do namespace.

@@ -10,7 +10,7 @@ data:
     organization:
       name: Spotify
     backend:
-      baseUrl: http://localhost:8081 # Adjusted to match Service
+      baseUrl: http://localhost:8081 # Ajustado para corresponder ao Serviço
       listen:
         port: 7007
       cors:

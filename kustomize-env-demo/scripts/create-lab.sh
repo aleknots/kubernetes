@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# Creates kind cluster, installs Argo CD, and applies App-of-Apps pattern.
-# Usage (from repo root): kustomize-env-demo/scripts/create-lab.sh
+# Cria o cluster kind, instala o Argo CD e aplica o padrão App-of-Apps.
+# Uso (a partir da raiz do repo): kustomize-env-demo/scripts/create-lab.sh
 set -euo pipefail
 CLUSTER="${CLUSTER_NAME:-kustomize-demo}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 if ! kind get clusters 2>/dev/null | grep -qx "$CLUSTER"; then
-  echo "Creating kind cluster '$CLUSTER'..."
+  echo "Criando cluster kind '$CLUSTER'..."
   kind create cluster --name "$CLUSTER"
 fi
 
 kubectl config use-context "kind-${CLUSTER}"
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
-echo "Installing Argo CD..."
+echo "Instalando o Argo CD..."
 kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# Applications use spec.project: lab - AppProject must exist first.
+# Aplicações usam spec.project: lab - O AppProject precisa existir primeiro.
 kubectl apply -f "$ROOT/argocd/appproject-lab.yaml"
 
-# Poll Git every 60s (default Argo CD polling is 180s).
+# Consulta o Git a cada 60s (o padrão de consulta do Argo CD é 180s).
 kubectl -n argocd patch cm argocd-cm --type merge -p '{"data":{"timeout.reconciliation":"60s"}}'
 kubectl -n argocd rollout restart statefulset/argocd-application-controller
 
-echo "Waiting for Argo CD to be ready..."
+echo "Aguardando o Argo CD ficar pronto..."
 kubectl -n argocd rollout status deploy/argocd-server --timeout=300s
 kubectl -n argocd rollout status statefulset/argocd-application-controller --timeout=300s
 
-echo "Applying Root Application (App-of-Apps)..."
+echo "Aplicando Aplicação Raiz (App-of-Apps)..."
 kubectl apply -f "$ROOT/argocd/app-root.yaml"
 
-# Load environment variables from .env if present
+# Carrega variáveis de ambiente do .env se presente
 if [[ -f "$ROOT/.env" ]]; then
   # export variables from .env
   set -a

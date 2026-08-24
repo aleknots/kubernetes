@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Deletes lab Applications/namespaces (if kind cluster exists) and deletes kind cluster.
-# Usage (from repo root): kustomize-env-demo/scripts/delete-lab.sh [--yes]
+# Exclui as aplicações/namespaces do lab (se o cluster kind existir) e exclui o cluster kind.
+# Uso (a partir da raiz do repo): kustomize-env-demo/scripts/delete-lab.sh [--yes]
 set -euo pipefail
 
 CLUSTER="${CLUSTER_NAME:-kustomize-demo}"

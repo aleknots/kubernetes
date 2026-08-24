@@ -1,6 +1,6 @@
-# Optional alternative to App-of-Apps: generate the 3 Applications from a list.
-# Use EITHER root-app.yaml + applications/*.yaml OR this ApplicationSet (not both,
-# or you will fight over the same Application names).
+# Alternativa opcional ao App-of-Apps: gerar as 3 Aplicações a partir de uma lista.
+# Use OU o app-root.yaml + applications/*.yaml OU este ApplicationSet (não ambos,
+# para evitar conflitos com os mesmos nomes de Aplicação).
 #
 # Bootstrap:
 #   kubectl apply -f kustomize-env-demo/argocd/applicationset.yaml

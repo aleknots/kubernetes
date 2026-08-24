@@ -1,13 +1,13 @@
-# AppProject "lab" - required before any Application can use spec.project: lab.
-# Argo only ships with project "default". Changing the name in Application YAML
-# is not enough; this CR must exist in namespace argocd.
+# AppProject "lab" - necessário antes que qualquer Aplicação possa usar spec.project: lab.
+# O Argo traz apenas o projeto "default" por padrão. Alterar o nome no YAML da Aplicação
+# não é suficiente; este CR precisa existir no namespace argocd.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
   name: lab
   namespace: argocd
 spec:
-  description: app-banner demo (kind)
+  description: demonstração app-banner (kind)
   sourceRepos:
     - '*'
   destinations:

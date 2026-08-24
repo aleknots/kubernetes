@@ -1,6 +1,6 @@
 #!/bin/bash
-# Exposes authenticated proxy for Kong Manager OSS to local browser.
-# Usage: bash scripts/port-forward-manager.sh [manager_port]
+# Expõe o proxy autenticado do Kong Manager OSS para o navegador local.
+# Uso: bash scripts/port-forward-manager.sh [porta_manager]
 
 set -euo pipefail
 
