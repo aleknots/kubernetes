@@ -17,5 +17,5 @@ patches: # Patches JSON sobre o base (RFC 6902)
         path: /spec/template/spec/containers/0/env/1/value
         value: "#FD35B7"    # env[1] = BG_COLOR → cor de fundo
       - op: replace
-        path: /spec/containers/0/image/value
+        path: /spec/template/spec/containers/0/image/1/value
         value: aleknots/app-banner:v2 # sobrescreve a imagem para STG
