@@ -13,20 +13,24 @@ jobs:
   build-and-deploy:
     name: Build Docker & Implantação no K8s
     runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      KUBECONFIG: ${{ secrets.KUBECONFIG }}
 
     steps:
       - name: Baixar Código do Repositório
         uses: actions/checkout@v4
 
-      - name: Autenticar no Docker Hub (Opcional)
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+      - name: Autenticar no Docker Hub
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build e Push da Imagem Docker
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
         uses: docker/build-push-action@v5
         with:
           context: ./sre-portfolio
@@ -42,14 +46,12 @@ jobs:
           version: 'latest'
 
       - name: Configurar Kubeconfig
-        if: ${{ secrets.KUBECONFIG != '' }}
         uses: azure/k8s-set-context@v4
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
       - name: Aplicar Manifesto no Kubernetes
-        if: ${{ secrets.KUBECONFIG != '' }}
         run: |
           kubectl apply -f sre-portfolio/k8s/deployment.yaml
           kubectl rollout status deployment/sre-portfolio -n default --timeout=120s
