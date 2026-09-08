@@ -16,7 +16,7 @@ jobs:
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
       BASTION_HOST: ${{ secrets.BASTION_HOST }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -47,25 +47,22 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configurar Kubeconfig
-        uses: azure/k8s-set-context@v4
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-
-      - name: Estabelecer Ponte SSH via Bastion Host
-        if: ${{ env.BASTION_HOST != '' && env.SSH_PRIVATE_KEY != '' }}
+      - name: Configurar Kubeconfig e Ponte SSH via Bastion Host
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+          mkdir -p ~/.kube ~/.ssh
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
           
-          # Inicia o túnel SSH em background (redireciona 127.0.0.1:6443 para 10.0.2.11:6443 via Bastion)
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -f -N -L 6443:10.0.2.11:6443 opc@${{ secrets.BASTION_HOST }}
-          
-          # Atualiza o endereço do cluster no Kubeconfig para apontar para o túnel local
+          # Redireciona a URL do cluster para o túnel local 127.0.0.1:6443
           sed -i 's|https://10.0.2.11:6443|https://127.0.0.1:6443|g' ~/.kube/config
+
+          if [ -n "${{ secrets.BASTION_HOST }}" ] && [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "Conectando ponte SSH via Bastion Host..."
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -f -N -L 6443:10.0.2.11:6443 opc@${{ secrets.BASTION_HOST }}
+          fi
 
       - name: Aplicar Manifesto no Kubernetes
         run: |
