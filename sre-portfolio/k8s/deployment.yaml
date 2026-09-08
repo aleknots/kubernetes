@@ -18,6 +18,7 @@ spec:
       containers:
       - name: sre-portfolio
         image: aleknots/sre-portfolio:v1
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
         resources:

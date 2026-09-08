@@ -67,4 +67,5 @@ jobs:
       - name: Aplicar Manifesto no Kubernetes
         run: |
           kubectl apply -f sre-portfolio/k8s/deployment.yaml --insecure-skip-tls-verify=true
+          kubectl rollout restart deployment/sre-portfolio -n default --insecure-skip-tls-verify=true
           kubectl rollout status deployment/sre-portfolio -n default --timeout=120s --insecure-skip-tls-verify=true
