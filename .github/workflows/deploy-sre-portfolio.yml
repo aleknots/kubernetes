@@ -17,6 +17,8 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      BASTION_HOST: ${{ secrets.BASTION_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
     steps:
       - name: Baixar Código do Repositório
@@ -51,7 +53,21 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
+      - name: Estabelecer Ponte SSH via Bastion Host
+        if: ${{ env.BASTION_HOST != '' && env.SSH_PRIVATE_KEY != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+          
+          # Inicia o túnel SSH em background (redireciona 127.0.0.1:6443 para 10.0.2.11:6443 via Bastion)
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -f -N -L 6443:10.0.2.11:6443 opc@${{ secrets.BASTION_HOST }}
+          
+          # Atualiza o endereço do cluster no Kubeconfig para apontar para o túnel local
+          sed -i 's|https://10.0.2.11:6443|https://127.0.0.1:6443|g' ~/.kube/config
+
       - name: Aplicar Manifesto no Kubernetes
         run: |
-          kubectl apply -f sre-portfolio/k8s/deployment.yaml
-          kubectl rollout status deployment/sre-portfolio -n default --timeout=120s
+          kubectl apply -f sre-portfolio/k8s/deployment.yaml --insecure-skip-tls-verify=true
+          kubectl rollout status deployment/sre-portfolio -n default --timeout=120s --insecure-skip-tls-verify=true
