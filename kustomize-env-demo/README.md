@@ -210,12 +210,11 @@ Para testar a atualização da versão da imagem no lab (gerando e enviando a ta
    ```bash
    cd /caminho/para/kubernetes
 
-   # 1) Build da imagem com a tag v2 (substitua 'seu-usuario' pela conta no Docker Hub)
-   docker build --build-arg APP_VERSION=v2 -t seu-usuario/app-banner:v2 kustomize-env-demo/app
-
-   # 2) Login & Push para o Docker Hub
+   # 1) Login
    docker login -u seu-usuario
-   docker push seu-usuario/app-banner:v2
+
+   # 2) Build da imagem com a tag v2 (substitua 'seu-usuario' pela conta no Docker Hub) & Push para o Docker Hub
+   docker buildx build --platform linux/amd64,linux/arm64 --build-arg APP_VERSION=v2 -t seu-usuario/app-banner:v2 --push kustomize-env-demo/app
    ```
 
 2. **Atualizar Imagem no Kustomize**:
