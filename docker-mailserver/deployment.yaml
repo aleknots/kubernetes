@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailserver
+  namespace: mailserver
+  labels:
+    app.kubernetes.io/name: docker-mailserver
+    app.kubernetes.io/instance: mailserver-main
+spec:
+  replicas: 1
+  # Estratégia Recreate é mandatória para PVCs ReadWriteOnce (RWO) no Kubernetes
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docker-mailserver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docker-mailserver
+    spec:
+      containers:
+        - name: mailserver
+          image: ghcr.io/docker-mailserver/docker-mailserver:latest
+          imagePullPolicy: IfNotPresent
+          hostname: mail
+          domainname: airqloud.com.br
+          
+          # Capacidades necessárias para execução de serviços como Fail2ban e utilitários de rede
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN # Necessário para o Fail2ban gerenciar regras de firewall iptables
+
+          # Importação automatizada de todas as variáveis de ambiente
+          envFrom:
+            - configMapRef:
+                name: mailserver-config
+            - secretRef:
+                name: mailserver-secret
+
+          ports:
+            - name: smtp
+              containerPort: 25
+              protocol: TCP
+            - name: smtps
+              containerPort: 465
+              protocol: TCP
+            - name: submission
+              containerPort: 587
+              protocol: TCP
+            - name: imaps
+              containerPort: 993
+              protocol: TCP
+
+          # Limites de recursos (otimizados para rodar sem ClamAV)
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1536Mi"
+
+          # Mapeamento dos diretórios persistentes e certificados
+          volumeMounts:
+            - name: mail-data
+              mountPath: /var/mail
+            - name: mail-state
+              mountPath: /var/mail-state
+            - name: mail-config
+              mountPath: /tmp/docker-mailserver
+            - name: mail-tls
+              mountPath: /etc/letsencrypt/live/mail.airqloud.com.br
+              readOnly: true
+
+          # Sondas de Liveness e Readiness
+          livenessProbe:
+            tcpSocket:
+              port: 587
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 993
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+      volumes:
+        - name: mail-data
+          persistentVolumeClaim:
+            claimName: mailserver-data-pvc
+        - name: mail-state
+          persistentVolumeClaim:
+            claimName: mailserver-state-pvc
+        - name: mail-config
+          persistentVolumeClaim:
+            claimName: mailserver-config-pvc
+        - name: mail-tls
+          secret:
+            secretName: mailserver-tls
+            items:
+              - key: tls.crt
+                path: fullchain.pem
+              - key: tls.key
+                path: privkey.pem

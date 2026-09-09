@@ -1,0 +1,61 @@
+name: Implantação do Docker Mailserver no Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docker-mailserver/**'
+      - '.github/workflows/deploy-docker-mailserver.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Implantação do Mailserver no Cluster OCI
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+      BASTION_HOST: ${{ secrets.BASTION_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    steps:
+      - name: Baixar Código do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configurar Kubeconfig e Ponte SSH via Bastion Host
+        run: |
+          mkdir -p ~/.kube ~/.ssh
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          
+          # Redireciona a URL do cluster para o túnel local 127.0.0.1:6443
+          sed -i 's|https://10.0.2.11:6443|https://127.0.0.1:6443|g' ~/.kube/config
+
+          if [ -n "${{ secrets.BASTION_HOST }}" ] && [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "Conectando ponte SSH via Bastion Host OCI..."
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -f -N -L 6443:10.0.2.11:6443 opc@${{ secrets.BASTION_HOST }}
+          fi
+
+      - name: Injetar Credenciais do SMTP Relay no secret.yaml (Se Configuradas)
+        run: |
+          if [ -n "${{ secrets.MAILSERVER_RELAY_USER }}" ]; then
+            echo "Substituindo usuário do SMTP Relay..."
+            sed -i "s|seu-usuario-relay@airqloud.com.br|${{ secrets.MAILSERVER_RELAY_USER }}|g" docker-mailserver/secret.yaml
+          fi
+          if [ -n "${{ secrets.MAILSERVER_RELAY_PASS }}" ]; then
+            echo "Substituindo senha do SMTP Relay..."
+            sed -i "s|sua-senha-ou-api-key-relay|${{ secrets.MAILSERVER_RELAY_PASS }}|g" docker-mailserver/secret.yaml
+          fi
+
+      - name: Aplicar Manifestos Kustomize no Kubernetes
+        run: |
+          kubectl apply -k docker-mailserver/ --insecure-skip-tls-verify=true
+          kubectl rollout status deployment/mailserver -n mailserver --timeout=180s --insecure-skip-tls-verify=true

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mailserver-config
+  namespace: mailserver
+  labels:
+    app.kubernetes.io/name: docker-mailserver
+data:
+  # =========================================================================
+  # CONFIGURAÇÕES GERAIS E DOMÍNIO
+  # =========================================================================
+  OVERRIDE_HOSTNAME: "mail.airqloud.com.br"
+  DOMAINNAME: "airqloud.com.br"
+  LOG_LEVEL: "info"
+  DMS_TELEMETRY: "0"
+  ONE_DIR: "1" # Consolida o estado de vários serviços em /var/mail-state
+
+  # =========================================================================
+  # SEGURANÇA E SERVIÇOS ANTISPAM / ANTIVÍRUS
+  # =========================================================================
+  # SpamAssassin ativado para filtrar e-mails maliciosos
+  ENABLE_SPAMASSASSIN: "1"
+  SPAMASSASSIN_SPAM_TO_INBOX: "1"
+  
+  # ClamAV desativado para economizar recursos (ClamAV consome ~1.5GB+ de RAM)
+  ENABLE_CLAMAV: "0"
+  
+  # Fail2ban para proteção contra ataques de força bruta
+  ENABLE_FAIL2BAN: "1"
+  
+  # Outros serviços secundários desativados para melhor performance
+  ENABLE_POSTGREY: "0"
+  ENABLE_SASLAUTHD: "0"
+  PERMIT_DOCKER: "network"
+
+  # =========================================================================
+  # CONFIGURAÇÃO DE CERTIFICADOS SSL/TLS
+  # =========================================================================
+  # manual: utiliza certificados fornecidos via Secret montada em /etc/letsencrypt/live/mail.airqloud.com.br/
+  SSL_TYPE: "manual"
+  SSL_CERT_PATH: "/etc/letsencrypt/live/mail.airqloud.com.br/fullchain.pem"
+  SSL_KEY_PATH: "/etc/letsencrypt/live/mail.airqloud.com.br/privkey.pem"
+
+  # =========================================================================
+  # SMTP RELAY DE SAÍDA (CONTORNO DO BLOQUEIO DA PORTA 25 NA OCI)
+  # =========================================================================
+  # A Oracle Cloud bloqueia a porta 25 de saída. Para enviar e-mails externos,
+  # aponte para um provedor de SMTP Relay (Amazon SES, Brevo, SendGrid, Mailgun).
+  # Exemplo Brevo: [smtp-relay.brevo.com]:587
+  # Exemplo Amazon SES: [email-smtp.us-east-1.amazonaws.com]:587
+  DEFAULT_RELAY_HOST: "[smtp-relay.brevo.com]:587"
+  RELAY_HOST: "[smtp-relay.brevo.com]"
+  RELAY_PORT: "587"

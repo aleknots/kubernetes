@@ -1,0 +1,47 @@
+# PersistentVolumeClaims para armazenamento persistente no OCI Kubernetes (OKE)
+# Utiliza a StorageClass 'oci-bv' (Oracle Cloud Infrastructure Block Volume CSI)
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mailserver-data-pvc
+  namespace: mailserver
+  labels:
+    app.kubernetes.io/name: docker-mailserver
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: oci-bv # StorageClass padrão para Block Volume no OKE
+  resources:
+    requests:
+      storage: 20Gi # Armazenamento de caixas de entrada de e-mail (/var/mail)
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mailserver-state-pvc
+  namespace: mailserver
+  labels:
+    app.kubernetes.io/name: docker-mailserver
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: oci-bv
+  resources:
+    requests:
+      storage: 5Gi # Armazenamento de estados do Postfix, Fail2ban e chaves DKIM (/var/mail-state)
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mailserver-config-pvc
+  namespace: mailserver
+  labels:
+    app.kubernetes.io/name: docker-mailserver
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: oci-bv
+  resources:
+    requests:
+      storage: 1Gi # Armazenamento de arquivos de configuração dinâmicos (/tmp/docker-mailserver)
