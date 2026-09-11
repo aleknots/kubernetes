@@ -59,7 +59,7 @@ jobs:
           mkdir -p ~/.kube ~/.ssh
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
-          
+
           # Redireciona a URL do cluster para o túnel local 127.0.0.1:6443
           sed -i 's|https://10.0.2.11:6443|https://127.0.0.1:6443|g' ~/.kube/config
 

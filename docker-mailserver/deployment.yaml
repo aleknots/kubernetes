@@ -23,7 +23,7 @@ spec:
         - name: mailserver
           image: ghcr.io/docker-mailserver/docker-mailserver:latest
           imagePullPolicy: IfNotPresent
-          
+
           # Capacidades necessárias para execução de serviços como Fail2ban e utilitários de rede
           securityContext:
             capabilities:
