@@ -23,8 +23,6 @@ spec:
         - name: mailserver
           image: ghcr.io/docker-mailserver/docker-mailserver:latest
           imagePullPolicy: IfNotPresent
-          hostname: mail
-          domainname: airqloud.com.br
           
           # Capacidades necessárias para execução de serviços como Fail2ban e utilitários de rede
           securityContext:
