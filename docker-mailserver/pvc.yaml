@@ -8,7 +8,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: oci-bv # StorageClass padrão para Block Volume no OKE
+  # Sem 'storageClassName' explícito para utilizar a StorageClass padrão (default) configurada no cluster OCI OKE
   resources:
     requests:
-      storage: 50Gi # 1 único volume de 50GB consolidado (limite mínimo OCI)
+      storage: 50Gi # Mínimo de 50GB exigido pela Oracle Cloud
