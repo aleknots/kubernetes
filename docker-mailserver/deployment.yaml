@@ -93,8 +93,9 @@ spec:
 
       volumes:
         - name: mail-storage
-          persistentVolumeClaim:
-            claimName: mailserver-pvc
+          hostPath:
+            path: /var/lib/docker-mailserver
+            type: DirectoryOrCreate
         - name: mail-tls
           secret:
             secretName: mailserver-tls
