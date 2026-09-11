@@ -1,14 +1,14 @@
 # Deployment do Docker Mailserver no Kubernetes (Oracle Cloud - OCI)
 
-Este repositório contém o deployment completo e pronto para produção do **Docker Mailserver** (`setup.mailserver.tech`) no cluster Kubernetes da Oracle Cloud (OCI OKE), configurado para o domínio **`airqloud.com.br`** e a caixa de e-mail **`contato@airqloud.com.br`**.
+Este repositório contém o deployment completo e pronto para produção do **Docker Mailserver** (`setup.mailserver.tech`) no cluster Kubernetes da Oracle Cloud (OCI OKE), configurado para o domínio **`aleon.cloud.com.br`** e a caixa de e-mail **`contato@aleon.cloud.com.br`**.
 
 ---
 
 ## 📋 Arquitetura e Componentes
 
 - **Namespace**: `mailserver`
-- **Domínio Principal**: `airqloud.com.br`
-- **FQDN do Servidor**: `mail.airqloud.com.br`
+- **Domínio Principal**: `aleon.cloud.com.br`
+- **FQDN do Servidor**: `mail.aleon.cloud.com.br`
 - **Armazenamento**: Volume `hostPath` montado em `/var/lib/docker-mailserver` no nó do servidor, utilizando `subPath` para organizar:
   - `mail/` (`/var/mail`): Mensagens e caixas de entrada.
   - `state/` (`/var/mail-state`): Chaves DKIM, bancos de dados e estados do serviço.
@@ -32,13 +32,13 @@ Toda vez que arquivos na pasta `docker-mailserver/` forem alterados e enviados v
 
 ## 🚀 Passo a Passo de Pós-Instalação
 
-### 1. Criar a Conta de E-mail (`contato@airqloud.com.br`)
+### 1. Criar a Conta de E-mail (`contato@aleon.cloud.com.br`)
 
 Com o Pod em status `1/1 READY`, execute no terminal do seu servidor:
 
 ```bash
-# Criar a conta contato@airqloud.com.br com a senha desejada
-kubectl exec -it deployment/mailserver -n mailserver -- setup email add contato@airqloud.com.br "SuaSenhaSeguraAqui123!"
+# Criar a conta contato@aleon.cloud.com.br com a senha desejada
+kubectl exec -it deployment/mailserver -n mailserver -- setup email add contato@aleon.cloud.com.br "SuaSenhaSeguraAqui123!"
 
 # Listar as contas criadas para confirmar
 kubectl exec -it deployment/mailserver -n mailserver -- setup email list
@@ -55,31 +55,29 @@ Para garantir a entregabilidade dos e-mails e evitar a caixa de SPAM no Gmail e 
 kubectl exec -it deployment/mailserver -n mailserver -- setup config dkim
 
 # Exibir a chave pública DKIM para cadastrar no Cloudflare
-kubectl exec -it deployment/mailserver -n mailserver -- cat /var/mail-state/lib-postfix/opendkim/keys/airqloud.com.br/mail.txt
+kubectl exec -it deployment/mailserver -n mailserver -- cat /var/mail-state/lib-postfix/opendkim/keys/aleon.cloud.com.br/mail.txt
 ```
 
 ---
 
-### 3. Obter o IP Público do Load Balancer
+### 3. Obter o IP Público do Servidor OCI (`srv-k8s-01`)
 
-```bash
-kubectl get svc -n mailserver mailserver-service
-```
-*(Copie o IP retornado na coluna `EXTERNAL-IP`).*
+Como o deployment utiliza `hostNetwork: true` para expor as portas nativas (25, 465, 587, 993) diretamente na VM:
+- O IP público que você deve cadastrar no Cloudflare é o **IP Público da sua instância OCI** (`srv-k8s-01`).
 
 ---
 
 ## 🌐 Configuração de Registros DNS Obrigatórios (Cloudflare)
 
-No painel do **Cloudflare** para o domínio `airqloud.com.br` -> **DNS**:
+No painel do **Cloudflare** para o domínio `aleon.cloud.com.br` -> **DNS**:
 
 | Tipo | Nome / Host | Valor / Destino | Proxy Status / TTL | Observação |
 |---|---|---|---|---|
-| **A** | `mail` | `<EXTERNAL-IP>` | ⚠️ **DNS Only** (Nuvem Cinza) | Aponta `mail.airqloud.com.br` |
-| **MX** | `@` | `mail.airqloud.com.br` (Prioridade 10) | Auto | Recebimento de e-mails |
+| **A** | `mail` | `<EXTERNAL-IP>` | ⚠️ **DNS Only** (Nuvem Cinza) | Aponta `mail.aleon.cloud.com.br` |
+| **MX** | `@` | `mail.aleon.cloud.com.br` (Prioridade 10) | Auto | Recebimento de e-mails |
 | **TXT** | `mail._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOC...` | Auto | Cole a chave DKIM gerada |
 | **TXT** | `@` | `v=spf1 mx a include:relay.brevo.com ~all` | Auto | Validação SPF para o Brevo |
-| **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@airqloud.com.br` | Auto | Política DMARC |
+| **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@aleon.cloud.com.br` | Auto | Política DMARC |
 
 ---
 
@@ -102,12 +100,12 @@ A Oracle Cloud bloqueia o tráfego de saída na porta TCP 25 em todas as instân
 
 ### Testar porta IMAPS (993)
 ```bash
-openssl s_client -connect mail.airqloud.com.br:993 -crlf
+openssl s_client -connect mail.aleon.cloud.com.br:993 -crlf
 ```
 
 ### Testar porta SMTP Submission com STARTTLS (587)
 ```bash
-openssl s_client -starttls smtp -connect mail.airqloud.com.br:587 -crlf
+openssl s_client -starttls smtp -connect mail.aleon.cloud.com.br:587 -crlf
 ```
 
 ---
@@ -116,11 +114,11 @@ openssl s_client -starttls smtp -connect mail.airqloud.com.br:587 -crlf
 
 - **Trocar senha de usuário**:
   ```bash
-  kubectl exec -it deployment/mailserver -n mailserver -- setup email change password contato@airqloud.com.br "NovaSenha123!"
+  kubectl exec -it deployment/mailserver -n mailserver -- setup email change password contato@aleon.cloud.com.br "NovaSenha123!"
   ```
 - **Criar Alias (redirecionamento de e-mail)**:
   ```bash
-  kubectl exec -it deployment/mailserver -n mailserver -- setup alias add suporte@airqloud.com.br contato@airqloud.com.br
+  kubectl exec -it deployment/mailserver -n mailserver -- setup alias add suporte@aleon.cloud.com.br contato@aleon.cloud.com.br
   ```
 - **Verificar logs do mailserver em tempo real**:
   ```bash

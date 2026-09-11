@@ -5,13 +5,8 @@ metadata:
   namespace: mailserver
   labels:
     app.kubernetes.io/name: docker-mailserver
-  annotations:
-    # Anotações para provisionar um Network Load Balancer (NLB - Layer 4) de alta performance na Oracle Cloud (OCI)
-    service.beta.kubernetes.io/oci-load-balancer-type: "nlb"
-    service.beta.kubernetes.io/oci-load-balancer-security-list-management-mode: "All"
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local # Preserva o IP de origem do cliente para logs e regras de antispam/fail2ban
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: docker-mailserver
   ports:
