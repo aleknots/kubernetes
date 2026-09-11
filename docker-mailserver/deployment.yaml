@@ -72,7 +72,7 @@ spec:
               mountPath: /tmp/docker-mailserver
               subPath: config
             - name: mail-tls
-              mountPath: /etc/letsencrypt/live/mail.airqloud.com.br
+              mountPath: /etc/letsencrypt/live/mail.seu-dominio.com.br
               readOnly: true
 
           # Sondas de Liveness e Readiness

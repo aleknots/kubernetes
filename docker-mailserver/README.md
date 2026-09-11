@@ -1,20 +1,20 @@
 # Deployment do Docker Mailserver no Kubernetes (Oracle Cloud - OCI)
 
-Este repositório contém o deployment completo e pronto para produção do **Docker Mailserver** (`setup.mailserver.tech`) no cluster Kubernetes da Oracle Cloud (OCI OKE), configurado para o domínio **`aleon.cloud.com.br`** e a caixa de e-mail **`contato@aleon.cloud.com.br`**.
+Este repositório contém o deployment completo e pronto para produção do **Docker Mailserver** (`setup.mailserver.tech`) no cluster Kubernetes da Oracle Cloud (OCI OKE), configurado para um domínio customizado (ex: **`seu-dominio.com.br`**) e endereço de e-mail (ex: **`contato@seu-dominio.com.br`**).
 
 ---
 
 ## 📋 Arquitetura e Componentes
 
 - **Namespace**: `mailserver`
-- **Domínio Principal**: `aleon.cloud.com.br`
-- **FQDN do Servidor**: `mail.aleon.cloud.com.br`
+- **Domínio Principal**: `seu-dominio.com.br`
+- **FQDN do Servidor**: `mail.seu-dominio.com.br`
 - **Armazenamento**: Volume `hostPath` montado em `/var/lib/docker-mailserver` no nó do servidor, utilizando `subPath` para organizar:
   - `mail/` (`/var/mail`): Mensagens e caixas de entrada.
   - `state/` (`/var/mail-state`): Chaves DKIM, bancos de dados e estados do serviço.
   - `config/` (`/tmp/docker-mailserver`): Contas de e-mail e aliases configurados.
 - **Segurança SSL/TLS**: Configurado com `SSL_TYPE: snakeoil` para boot automático instantâneo (com suporte a certificados customizados Let's Encrypt / Cert-Manager).
-- **Rede**: OCI Network Load Balancer (NLB Layer 4 TCP) preservando o IP de origem dos clientes.
+- **Rede**: Service `ClusterIP` com roteamento interno para o Cloudflare Tunnel / Bastion Host.
 - **Recursos**: Otimizado com `ENABLE_CLAMAV=0` para baixo consumo de RAM (~300MB), ideal para a cota **OCI Free Tier**.
 
 ---
@@ -32,13 +32,13 @@ Toda vez que arquivos na pasta `docker-mailserver/` forem alterados e enviados v
 
 ## 🚀 Passo a Passo de Pós-Instalação
 
-### 1. Criar a Conta de E-mail (`contato@aleon.cloud.com.br`)
+### 1. Criar a Conta de E-mail (`contato@seu-dominio.com.br`)
 
 Com o Pod em status `1/1 READY`, execute no terminal do seu servidor:
 
 ```bash
-# Criar a conta contato@aleon.cloud.com.br com a senha desejada
-kubectl exec -it deployment/mailserver -n mailserver -- setup email add contato@aleon.cloud.com.br "SuaSenhaSeguraAqui123!"
+# Criar a conta contato@seu-dominio.com.br com a senha desejada
+kubectl exec -it deployment/mailserver -n mailserver -- setup email add contato@seu-dominio.com.br "SuaSenhaSeguraAqui123!"
 
 # Listar as contas criadas para confirmar
 kubectl exec -it deployment/mailserver -n mailserver -- setup email list
@@ -54,59 +54,63 @@ Para garantir a entregabilidade dos e-mails e evitar a caixa de SPAM no Gmail e 
 # Gerar as chaves DKIM de 2048 bits
 kubectl exec -it deployment/mailserver -n mailserver -- setup config dkim
 
-# Exibir a chave pública DKIM para cadastrar no Cloudflare
-kubectl exec -it deployment/mailserver -n mailserver -- cat /var/mail-state/lib-postfix/opendkim/keys/aleon.cloud.com.br/mail.txt
+# Exibir a chave pública DKIM gerada para cadastrar no Cloudflare
+kubectl exec -it deployment/mailserver -n mailserver -- cat /tmp/docker-mailserver/opendkim/keys/seu-dominio.com.br/mail.txt
 ```
-
----
-
-### 3. Obter o IP Público do Servidor OCI (`srv-k8s-01`)
-
-Como o deployment utiliza `hostNetwork: true` para expor as portas nativas (25, 465, 587, 993) diretamente na VM:
-- O IP público que você deve cadastrar no Cloudflare é o **IP Público da sua instância OCI** (`srv-k8s-01`).
 
 ---
 
 ## 🌐 Configuração de Registros DNS Obrigatórios (Cloudflare)
 
-No painel do **Cloudflare** para o domínio `aleon.cloud.com.br` -> **DNS**:
+No painel do **Cloudflare** para o seu domínio (`seu-dominio.com.br`) -> **DNS**:
 
 | Tipo | Nome / Host | Valor / Destino | Proxy Status / TTL | Observação |
 |---|---|---|---|---|
-| **A** | `mail` | `<EXTERNAL-IP>` | ⚠️ **DNS Only** (Nuvem Cinza) | Aponta `mail.aleon.cloud.com.br` |
-| **MX** | `@` | `mail.aleon.cloud.com.br` (Prioridade 10) | Auto | Recebimento de e-mails |
-| **TXT** | `mail._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOC...` | Auto | Cole a chave DKIM gerada |
-| **TXT** | `@` | `v=spf1 mx a include:relay.brevo.com ~all` | Auto | Validação SPF para o Brevo |
-| **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@aleon.cloud.com.br` | Auto | Política DMARC |
+| **MX** | `@` | `mail.seu-dominio.com.br` (Prioridade 10) | Auto | Recebimento via Cloudflare Email Routing |
+| **TXT** | `mail._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOC...` | Auto | Cole a chave DKIM gerada no Passo 2 |
+| **TXT** | `@` | `v=spf1 mx a include:relay.brevo.com ~all` | Auto | Validação SPF para envio via Brevo |
+| **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@seu-dominio.com.br` | Auto | Política DMARC |
 
 ---
 
 ## ⚠️ Configuração do SMTP Relay de Saída (Brevo)
 
-A Oracle Cloud bloqueia o tráfego de saída na porta TCP 25 em todas as instâncias por padrão. O recebimento funciona normalmente na porta 25, mas os envios externos são repassados ao **Brevo** (plano gratuito com 300 e-mails/dia).
+A Oracle Cloud bloqueia o tráfego de saída na porta TCP 25 em todas as instâncias por padrão. Os envios externos são repassados ao **Brevo** (plano gratuito com 300 e-mails/dia).
 
 ### Como configurar as credenciais no GitHub Secrets:
 
 1. Crie uma conta gratuita em [brevo.com](https://www.brevo.com).
-2. Em **SMTP & API Keys**, pegue seu login SMTP (ex: `b8ed55001@smtp-brevo.com`) e gere sua chave/senha de API.
+2. Em **SMTP & API Keys**, pegue seu login SMTP (ex: `seu-login@smtp-brevo.com`) e gere sua chave/senha de API.
 3. No GitHub (*Settings > Secrets and variables > Actions*), adicione os 2 segredos:
-   - `MAILSERVER_RELAY_USER`: Seu login SMTP do Brevo
+   - `MAILSERVER_RELAY_USER`: Seu login SMTP do Brevo (ex: `seu-login@smtp-brevo.com`)
    - `MAILSERVER_RELAY_PASS`: Sua chave de API SMTP do Brevo
 4. Na aba **Actions** do GitHub, execute novamente a pipeline (*Run workflow*) para atualizar as credenciais com segurança no cluster.
 
 ---
 
-## 🔍 Testes de Conexão e Validação
+## 📩 Configuração no Gmail (Enviar e Receber como `contato@seu-dominio.com.br`)
 
-### Testar porta IMAPS (993)
-```bash
-openssl s_client -connect mail.aleon.cloud.com.br:993 -crlf
-```
+Para enviar e receber e-mails da sua caixa customizada diretamente na interface web ou app do Gmail:
 
-### Testar porta SMTP Submission com STARTTLS (587)
-```bash
-openssl s_client -starttls smtp -connect mail.aleon.cloud.com.br:587 -crlf
-```
+### 1. Configurar Recebimento (Cloudflare Email Routing)
+- No painel do **Cloudflare** -> **Email Routing** -> **Routing rules**:
+- Crie uma regra direcionando `contato@seu-dominio.com.br` para a sua conta principal do Gmail (ex: `seu-email@gmail.com`).
+
+### 2. Configurar Envio no Gmail (via Brevo SMTP Relay)
+1. No Gmail, acesse **Configurações** (engrenagem) -> **Ver todas as configurações** -> **Contas e Importação**.
+2. Na seção **Enviar e-mail como**, clique em **Adicionar outro endereço de e-mail**.
+3. Na primeira tela:
+   - **Nome**: `Seu Nome / Sua Empresa`
+   - **Endereço de e-mail**: `contato@seu-dominio.com.br`
+   - Mantenha a opção **Tratar como um alias** marcada e clique em **Próxima etapa ».**
+4. Na tela de Servidor SMTP:
+   - **Servidor SMTP**: `smtp-relay.brevo.com`
+   - **Porta**: `587`
+   - **Nome de usuário**: `seu-login@smtp-brevo.com` *(Seu login SMTP do Brevo)*
+   - **Senha**: *(Sua Chave API / Senha SMTP gerada no Brevo)*
+   - **Conexão segura**: Selecione **Conexão segura usando TLS (recomendado)**
+5. Clique em **Adicionar conta »**.
+6. Digite o código de confirmação recebido por e-mail no seu Gmail para validar a associação.
 
 ---
 
@@ -114,11 +118,11 @@ openssl s_client -starttls smtp -connect mail.aleon.cloud.com.br:587 -crlf
 
 - **Trocar senha de usuário**:
   ```bash
-  kubectl exec -it deployment/mailserver -n mailserver -- setup email change password contato@aleon.cloud.com.br "NovaSenha123!"
+  kubectl exec -it deployment/mailserver -n mailserver -- setup email change password contato@seu-dominio.com.br "NovaSenha123!"
   ```
 - **Criar Alias (redirecionamento de e-mail)**:
   ```bash
-  kubectl exec -it deployment/mailserver -n mailserver -- setup alias add suporte@aleon.cloud.com.br contato@aleon.cloud.com.br
+  kubectl exec -it deployment/mailserver -n mailserver -- setup alias add suporte@seu-dominio.com.br contato@seu-dominio.com.br
   ```
 - **Verificar logs do mailserver em tempo real**:
   ```bash
