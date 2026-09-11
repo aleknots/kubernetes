@@ -14,7 +14,7 @@ spec:
   storageClassName: oci-bv # StorageClass padrão para Block Volume no OKE
   resources:
     requests:
-      storage: 20Gi # Armazenamento de caixas de entrada de e-mail (/var/mail)
+      storage: 50Gi # Mínimo permitido por Block Volume na Oracle Cloud (OCI)
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -29,7 +29,7 @@ spec:
   storageClassName: oci-bv
   resources:
     requests:
-      storage: 5Gi # Armazenamento de estados do Postfix, Fail2ban e chaves DKIM (/var/mail-state)
+      storage: 50Gi # Mínimo permitido por Block Volume na Oracle Cloud (OCI)
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -44,4 +44,4 @@ spec:
   storageClassName: oci-bv
   resources:
     requests:
-      storage: 1Gi # Armazenamento de arquivos de configuração dinâmicos (/tmp/docker-mailserver)
+      storage: 50Gi # Mínimo permitido por Block Volume na Oracle Cloud (OCI)
