@@ -19,8 +19,6 @@ spec:
       labels:
         app.kubernetes.io/name: docker-mailserver
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: mailserver
           image: ghcr.io/docker-mailserver/docker-mailserver:latest
