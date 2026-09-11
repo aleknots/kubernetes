@@ -58,4 +58,4 @@ jobs:
       - name: Aplicar Manifestos Kustomize no Kubernetes
         run: |
           kubectl apply -k docker-mailserver/ --insecure-skip-tls-verify=true
-          kubectl rollout status deployment/mailserver -n mailserver --timeout=180s --insecure-skip-tls-verify=true
+          kubectl rollout status deployment/mailserver -n mailserver --timeout=300s --insecure-skip-tls-verify=true

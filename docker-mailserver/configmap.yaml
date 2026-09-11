@@ -36,8 +36,9 @@ data:
   # =========================================================================
   # CONFIGURAÇÃO DE CERTIFICADOS SSL/TLS
   # =========================================================================
-  # manual: utiliza certificados fornecidos via Secret montada em /etc/letsencrypt/live/mail.airqloud.com.br/
-  SSL_TYPE: "manual"
+  # self-signed: gera um certificado autoassinado automaticamente no primeiro boot (ideal para deploy inicial).
+  # Para usar Let's Encrypt / Cert-Manager, altere para "manual" e insira os certificados na Secret mailserver-tls.
+  SSL_TYPE: "self-signed"
   SSL_CERT_PATH: "/etc/letsencrypt/live/mail.airqloud.com.br/fullchain.pem"
   SSL_KEY_PATH: "/etc/letsencrypt/live/mail.airqloud.com.br/privkey.pem"
 
