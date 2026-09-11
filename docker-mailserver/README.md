@@ -1,6 +1,6 @@
 # Deployment do Docker Mailserver no Kubernetes (Oracle Cloud - OCI)
 
-Este repositório contém o deployment completo e pronto para produção do **Docker Mailserver** (`setup.mailserver.tech`) no Kubernetes da Oracle Cloud (OCI OKE), configurado para o domínio **`airqloud.com.br`** e o e-mail **`contato@airqloud.com.br`**.
+Este repositório contém o deployment completo e pronto para produção do **Docker Mailserver** (`setup.mailserver.tech`) no cluster Kubernetes da Oracle Cloud (OCI OKE), configurado para o domínio **`airqloud.com.br`** e a caixa de e-mail **`contato@airqloud.com.br`**.
 
 ---
 
@@ -9,59 +9,35 @@ Este repositório contém o deployment completo e pronto para produção do **Do
 - **Namespace**: `mailserver`
 - **Domínio Principal**: `airqloud.com.br`
 - **FQDN do Servidor**: `mail.airqloud.com.br`
-- **Armazenamento**: 3 PVCs utilizando o StorageClass `oci-bv` (Oracle Block Volume):
-  - `mailserver-data-pvc` (`/var/mail`): Caixas de e-mail e mensagens.
-  - `mailserver-state-pvc` (`/var/mail-state`): Chaves DKIM, bancos de dados e estado dos serviços.
-  - `mailserver-config-pvc` (`/tmp/docker-mailserver`): Configurações dinâmicas de contas e aliases.
-- **Rede**: OCI Network Load Balancer (NLB) Layer 4 preservando o IP dos clientes.
-- **Recursos**: Otimizado com `ENABLE_CLAMAV=0` para economia de memória RAM.
+- **Armazenamento**: Volume `hostPath` montado em `/var/lib/docker-mailserver` no nó do servidor, utilizando `subPath` para organizar:
+  - `mail/` (`/var/mail`): Mensagens e caixas de entrada.
+  - `state/` (`/var/mail-state`): Chaves DKIM, bancos de dados e estados do serviço.
+  - `config/` (`/tmp/docker-mailserver`): Contas de e-mail e aliases configurados.
+- **Segurança SSL/TLS**: Configurado com `SSL_TYPE: snakeoil` para boot automático instantâneo (com suporte a certificados customizados Let's Encrypt / Cert-Manager).
+- **Rede**: OCI Network Load Balancer (NLB Layer 4 TCP) preservando o IP de origem dos clientes.
+- **Recursos**: Otimizado com `ENABLE_CLAMAV=0` para baixo consumo de RAM (~300MB), ideal para a cota **OCI Free Tier**.
 
 ---
 
-## 🚀 Passo a Passo de Instalação
+## ⚙️ Pipeline de CI/CD (GitHub Actions)
 
-### 1. Configurar Credenciais e TLS
+A implantação é totalmente automatizada via GitHub Actions pelo arquivo [`.github/workflows/deploy-docker-mailserver.yml`](../.github/workflows/deploy-docker-mailserver.yml).
 
-Antes de aplicar os manifestos, edite o arquivo [`secret.yaml`](secret.yaml):
-
-1. Defina as credenciais do seu provedor de **SMTP Relay** (ver seção sobre bloqueio da porta 25 no OCI):
-   ```yaml
-   RELAY_USER: "seu-usuario-relay"
-   RELAY_PASS: "sua-senha-ou-api-key"
-   ```
-2. Adicione os certificados SSL/TLS do seu domínio em `mailserver-tls` (ou utilize o `cert-manager`).
+Toda vez que arquivos na pasta `docker-mailserver/` forem alterados e enviados via `git push origin main`, a pipeline:
+1. Conecta-se ao cluster OCI via túnel SSH no Bastion Host.
+2. Injeta as credenciais de SMTP Relay (se configuradas nos Secrets do GitHub).
+3. Aplica os manifestos via `kubectl apply -k docker-mailserver/` e valida a prontidão do Pod.
 
 ---
 
-### 2. Aplicar os Manifestos no Cluster
+## 🚀 Passo a Passo de Pós-Instalação
 
-Execute o comando a seguir na raiz do diretório `docker-mailserver`:
+### 1. Criar a Conta de E-mail (`contato@airqloud.com.br`)
 
-```bash
-kubectl apply -k .
-```
-
-Verifique o status do deploy:
+Com o Pod em status `1/1 READY`, execute no terminal do seu servidor:
 
 ```bash
-# Ver os pods em execução
-kubectl get pods -n mailserver -w
-
-# Verificar o armazenamento persistente (PVCs)
-kubectl get pvc -n mailserver
-
-# Obter o IP Público do Network Load Balancer provisionado pelo OCI
-kubectl get svc -n mailserver mailserver-service
-```
-
----
-
-### 3. Criar o Primeiro Usuário de E-mail (`contato@airqloud.com.br`)
-
-Com o Pod em status `Running`, utilize o utilitário `setup` para criar o e-mail:
-
-```bash
-# Criar a conta contato@airqloud.com.br
+# Criar a conta contato@airqloud.com.br com a senha desejada
 kubectl exec -it deployment/mailserver -n mailserver -- setup email add contato@airqloud.com.br "SuaSenhaSeguraAqui123!"
 
 # Listar as contas criadas para confirmar
@@ -70,64 +46,55 @@ kubectl exec -it deployment/mailserver -n mailserver -- setup email list
 
 ---
 
-### 4. Gerar as Chaves DKIM
+### 2. Gerar as Chaves DKIM
 
-Para garantir a entregabilidade dos e-mails e passar nos filtros antispam (Gmail, Outlook), gere as chaves DKIM:
+Para garantir a entregabilidade dos e-mails e evitar a caixa de SPAM no Gmail e Outlook:
 
 ```bash
 # Gerar as chaves DKIM de 2048 bits
 kubectl exec -it deployment/mailserver -n mailserver -- setup config dkim
-```
 
-Exibir o registro TXT do DKIM gerado para adicionar ao seu DNS:
-
-```bash
+# Exibir a chave pública DKIM para cadastrar no Cloudflare
 kubectl exec -it deployment/mailserver -n mailserver -- cat /var/mail-state/lib-postfix/opendkim/keys/airqloud.com.br/mail.txt
 ```
 
 ---
 
-## 🌐 Configuração de Registros DNS Obrigatórios
+### 3. Obter o IP Público do Load Balancer
 
-No seu provedor de DNS (ex: Cloudflare, GoDaddy, OCI DNS), configure os seguintes registros para o IP Público retornado pelo `kubectl get svc -n mailserver`:
-
-| Tipo | Nome / Host | Valor / Destino | TTL | Observação |
-|---|---|---|---|---|
-| **A** | `mail` | `<IP_PUBLICO_DO_LOAD_BALANCER>` | Auto / 300 | Aponta `mail.airqloud.com.br` |
-| **MX** | `@` | `mail.airqloud.com.br` (Prioridade 10) | Auto / 300 | Define o servidor de recebimento |
-| **TXT** | `@` | `v=spf1 mx a include:relay.brevo.com ~all` | Auto / 300 | SPF (Ajuste o `include:` se usar SES/Brevo) |
-| **TXT** | `mail._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AM...` | Auto / 300 | Cole a chave gerada pelo comando `setup config dkim` |
-| **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@airqloud.com.br` | Auto / 300 | Política DMARC |
+```bash
+kubectl get svc -n mailserver mailserver-service
+```
+*(Copie o IP retornado na coluna `EXTERNAL-IP`).*
 
 ---
 
-## ⚠️ Nota Importante: Bloqueio da Porta 25 de Saída na Oracle Cloud (OCI)
+## 🌐 Configuração de Registros DNS Obrigatórios (Cloudflare)
 
-A Oracle Cloud bloqueia o tráfego de saída na porta TCP 25 em todas as instâncias por padrão para prevenção de spam.
+No painel do **Cloudflare** para o domínio `airqloud.com.br` -> **DNS**:
 
-### Como funciona o envio (Outbound Relay)?
+| Tipo | Nome / Host | Valor / Destino | Proxy Status / TTL | Observação |
+|---|---|---|---|---|
+| **A** | `mail` | `<EXTERNAL-IP>` | ⚠️ **DNS Only** (Nuvem Cinza) | Aponta `mail.airqloud.com.br` |
+| **MX** | `@` | `mail.airqloud.com.br` (Prioridade 10) | Auto | Recebimento de e-mails |
+| **TXT** | `mail._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOC...` | Auto | Cole a chave DKIM gerada |
+| **TXT** | `@` | `v=spf1 mx a include:relay.brevo.com ~all` | Auto | Validação SPF para o Brevo |
+| **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:contato@airqloud.com.br` | Auto | Política DMARC |
 
-1. O e-mail de entrada continua chegando normalmente na porta 25 (o OCI **não** bloqueia entrada).
-2. Para **enviar** e-mails para domínios externos (Gmail, Outlook, etc.), o Docker Mailserver utiliza um **SMTP Relay de Saída** na porta 587/465 com TLS.
+---
 
-### Configurando o SMTP Relay (ex: Brevo ou Amazon SES)
+## ⚠️ Configuração do SMTP Relay de Saída (Brevo)
 
-1. Crie uma conta em um serviço de envio (ex: **Brevo** [plano gratuito de 300 e-mails/dia] ou **Amazon SES**).
-2. No [`configmap.yaml`](configmap.yaml), defina:
-   ```yaml
-   DEFAULT_RELAY_HOST: "[smtp-relay.brevo.com]:587"
-   RELAY_HOST: "[smtp-relay.brevo.com]"
-   RELAY_PORT: "587"
-   ```
-3. No [`secret.yaml`](secret.yaml), insira suas credenciais:
-   ```yaml
-   RELAY_USER: "7a8b9c... (Sua chave ou e-mail no provedor)"
-   RELAY_PASS: "xsmtpsib-... (Sua chave de API / senha SMTP)"
-   ```
-4. Aplique as mudanças:
-   ```bash
-   kubectl apply -k .
-   ```
+A Oracle Cloud bloqueia o tráfego de saída na porta TCP 25 em todas as instâncias por padrão. O recebimento funciona normalmente na porta 25, mas os envios externos são repassados ao **Brevo** (plano gratuito com 300 e-mails/dia).
+
+### Como configurar as credenciais no GitHub Secrets:
+
+1. Crie uma conta gratuita em [brevo.com](https://www.brevo.com).
+2. Em **SMTP & API Keys**, pegue seu login SMTP (ex: `b8ed55001@smtp-brevo.com`) e gere sua chave/senha de API.
+3. No GitHub (*Settings > Secrets and variables > Actions*), adicione os 2 segredos:
+   - `MAILSERVER_RELAY_USER`: Seu login SMTP do Brevo
+   - `MAILSERVER_RELAY_PASS`: Sua chave de API SMTP do Brevo
+4. Na aba **Actions** do GitHub, execute novamente a pipeline (*Run workflow*) para atualizar as credenciais com segurança no cluster.
 
 ---
 
