@@ -62,12 +62,15 @@ spec:
 
           # Mapeamento dos diretórios persistentes e certificados
           volumeMounts:
-            - name: mail-data
+            - name: mail-storage
               mountPath: /var/mail
-            - name: mail-state
+              subPath: mail
+            - name: mail-storage
               mountPath: /var/mail-state
-            - name: mail-config
+              subPath: state
+            - name: mail-storage
               mountPath: /tmp/docker-mailserver
+              subPath: config
             - name: mail-tls
               mountPath: /etc/letsencrypt/live/mail.airqloud.com.br
               readOnly: true
@@ -89,15 +92,9 @@ spec:
             failureThreshold: 3
 
       volumes:
-        - name: mail-data
+        - name: mail-storage
           persistentVolumeClaim:
-            claimName: mailserver-data-pvc
-        - name: mail-state
-          persistentVolumeClaim:
-            claimName: mailserver-state-pvc
-        - name: mail-config
-          persistentVolumeClaim:
-            claimName: mailserver-config-pvc
+            claimName: mailserver-pvc
         - name: mail-tls
           secret:
             secretName: mailserver-tls
